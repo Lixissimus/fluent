@@ -5,3 +5,19 @@ version = 3
 [[package]]
 name = "fluent"
 version = "0.1.0"
+dependencies = [
+ "input-event-codes",
+ "libc",
+]
+
+[[package]]
+name = "input-event-codes"
+version = "6.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d437b85b6856c30525a380e2de28d630cd2f03b4eec8e8a043d71d7e223792dd"
+
+[[package]]
+name = "libc"
+version = "0.2.161"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e9489c2807c139ffd9c1794f4af0ebe86a828db53ecdc7fea2111d0fed085d1"
