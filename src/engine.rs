@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    event::{Combination, InputEvent, Modifiers},
+    event::{Combination, EventType, InputEvent, KeyValue, Modifiers},
     keys::Key,
 };
 
@@ -14,6 +14,7 @@ pub struct Engine {
 impl Engine {
     pub fn new() -> Self {
         Self {
+            // TODO: read mappings from config
             mappings: HashMap::from([
                 (
                     Combination {
@@ -50,11 +51,33 @@ impl Engine {
                     Combination {
                         modifiers: Modifiers {
                             capslock: true,
+                            alt_left: true,
+                            ..Default::default()
+                        },
+                        key: Key::K,
+                    },
+                    vec![Key::ShiftLeft, Key::ArrowDown],
+                ),
+                (
+                    Combination {
+                        modifiers: Modifiers {
+                            capslock: true,
                             ..Default::default()
                         },
                         key: Key::L,
                     },
                     vec![Key::ArrowRight],
+                ),
+                (
+                    Combination {
+                        modifiers: Modifiers {
+                            capslock: true,
+                            alt_left: true,
+                            ..Default::default()
+                        },
+                        key: Key::L,
+                    },
+                    vec![Key::ShiftLeft, Key::ArrowRight],
                 ),
                 (
                     Combination {
@@ -70,11 +93,33 @@ impl Engine {
                     Combination {
                         modifiers: Modifiers {
                             capslock: true,
+                            alt_left: true,
+                            ..Default::default()
+                        },
+                        key: Key::I,
+                    },
+                    vec![Key::ShiftLeft, Key::ArrowUp],
+                ),
+                (
+                    Combination {
+                        modifiers: Modifiers {
+                            capslock: true,
                             ..Default::default()
                         },
                         key: Key::U,
                     },
                     vec![Key::Home],
+                ),
+                (
+                    Combination {
+                        modifiers: Modifiers {
+                            capslock: true,
+                            alt_left: true,
+                            ..Default::default()
+                        },
+                        key: Key::U,
+                    },
+                    vec![Key::ShiftLeft, Key::Home],
                 ),
                 (
                     Combination {
@@ -90,6 +135,17 @@ impl Engine {
                     Combination {
                         modifiers: Modifiers {
                             capslock: true,
+                            alt_left: true,
+                            ..Default::default()
+                        },
+                        key: Key::O,
+                    },
+                    vec![Key::ShiftLeft, Key::End],
+                ),
+                (
+                    Combination {
+                        modifiers: Modifiers {
+                            capslock: true,
                             ..Default::default()
                         },
                         key: Key::H,
@@ -100,11 +156,33 @@ impl Engine {
                     Combination {
                         modifiers: Modifiers {
                             capslock: true,
+                            alt_left: true,
+                            ..Default::default()
+                        },
+                        key: Key::H,
+                    },
+                    vec![Key::CtrlLeft, Key::ShiftLeft, Key::ArrowLeft],
+                ),
+                (
+                    Combination {
+                        modifiers: Modifiers {
+                            capslock: true,
                             ..Default::default()
                         },
                         key: Key::Semicolon,
                     },
                     vec![Key::CtrlLeft, Key::ArrowRight],
+                ),
+                (
+                    Combination {
+                        modifiers: Modifiers {
+                            capslock: true,
+                            alt_left: true,
+                            ..Default::default()
+                        },
+                        key: Key::Semicolon,
+                    },
+                    vec![Key::CtrlLeft, Key::ShiftLeft, Key::ArrowRight],
                 ),
             ]),
             ..Default::default()
@@ -129,16 +207,82 @@ impl Engine {
                 output_events.push(event);
                 return output_events;
             };
-            let mut evts: Vec<InputEvent> = keys
-                .iter()
-                .map(|key| InputEvent {
-                    code: *key,
-                    ..event
-                })
-                .collect();
-            output_events.append(&mut evts);
+            let evts = keys.iter().map(|key| InputEvent {
+                code: *key,
+                ..event
+            });
+            output_events.append(&mut self.release_modifiers());
+            output_events.extend(evts);
         }
 
         output_events
+    }
+
+    fn release_modifiers(&self) -> Vec<InputEvent> {
+        let mut events = Vec::new();
+
+        // destructure to ensure this function is updated on new modifiers
+        let Modifiers {
+            ctrl_left,
+            ctrl_right,
+            alt_left,
+            alt_right,
+            shift_left,
+            shift_right,
+            // no need to release capslock, it is not forwarded anyways
+            capslock: _,
+        } = self.modifier_state;
+
+        // I'm not sure if it is a good idea to blindly release all modifiers that the system assumes are pressed.
+        // This way, we release them multiple times. However, until this creates a problem, let's leave it like that
+        // in order to not have to track which were already released.
+        // This e.g. conflicts in VS Code the alt focusing on the menu bar. Alternatively, we have to consume all
+        // modifiers until we have a non-modifier event. If it is a hotkey, we just send the hotkey. If not, we forward
+        // the modifiers and the non-modifier.
+
+        if ctrl_left {
+            events.push(InputEvent {
+                r#type: EventType::Key,
+                code: Key::CtrlLeft,
+                value: KeyValue::Release,
+            });
+        }
+        if ctrl_right {
+            events.push(InputEvent {
+                r#type: EventType::Key,
+                code: Key::CtrlRight,
+                value: KeyValue::Release,
+            });
+        }
+        if alt_left {
+            events.push(InputEvent {
+                r#type: EventType::Key,
+                code: Key::AltLeft,
+                value: KeyValue::Release,
+            });
+        }
+        if alt_right {
+            events.push(InputEvent {
+                r#type: EventType::Key,
+                code: Key::AltRight,
+                value: KeyValue::Release,
+            });
+        }
+        if shift_left {
+            events.push(InputEvent {
+                r#type: EventType::Key,
+                code: Key::ShiftLeft,
+                value: KeyValue::Release,
+            });
+        }
+        if shift_right {
+            events.push(InputEvent {
+                r#type: EventType::Key,
+                code: Key::ShiftRight,
+                value: KeyValue::Release,
+            });
+        }
+
+        events
     }
 }

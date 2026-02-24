@@ -27,10 +27,7 @@ pub fn run<I: Read, O: Write>(input: &mut I, output: &mut O) -> anyhow::Result<(
             continue;
         }
 
-        eprintln!("IN:  {:?}", evt);
-
         for output_event in engine.handle(evt) {
-            eprintln!("OUT: {:?}", output_event);
             print_event(output, &output_event).context("could not send event")?;
         }
     }
