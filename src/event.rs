@@ -2,7 +2,9 @@ use std::array::TryFromSliceError;
 
 use input_event_codes::EV_KEY;
 use libc::{time_t, timeval};
+use serde::{Deserialize, Serialize};
 
+use crate::is_default;
 use crate::keys::Key;
 
 #[derive(Default, Debug)]
@@ -135,14 +137,22 @@ impl From<&InputEvent> for EventBuffer {
     }
 }
 
-#[derive(Debug, Default, Hash, PartialEq, Eq, Clone)]
+#[derive(Debug, Default, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct Modifiers {
+    #[serde(skip_serializing_if = "is_default")]
     pub ctrl_left: bool,
+    #[serde(skip_serializing_if = "is_default")]
     pub ctrl_right: bool,
+    #[serde(skip_serializing_if = "is_default")]
     pub alt_left: bool,
+    #[serde(skip_serializing_if = "is_default")]
     pub alt_right: bool,
+    #[serde(skip_serializing_if = "is_default")]
     pub shift_left: bool,
+    #[serde(skip_serializing_if = "is_default")]
     pub shift_right: bool,
+    #[serde(skip_serializing_if = "is_default")]
     pub capslock: bool,
 }
 
@@ -178,7 +188,7 @@ impl Modifiers {
     }
 }
 
-#[derive(Debug, Hash, PartialEq, Eq)]
+#[derive(Debug, Hash, PartialEq, Eq, Serialize, Deserialize, Clone)]
 pub struct Combination {
     pub modifiers: Modifiers,
     pub key: Key,

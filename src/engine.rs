@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
+    config::Config,
     event::{Combination, EventType, InputEvent, KeyValue, Modifiers},
     keys::Key,
 };
@@ -12,187 +13,22 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new() -> Self {
-        Self {
-            // TODO: read mappings from config
-            mappings: HashMap::from([
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            ..Default::default()
-                        },
-                        key: Key::J,
-                    },
-                    vec![Key::ArrowLeft],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            alt_left: true,
-                            ..Default::default()
-                        },
-                        key: Key::J,
-                    },
-                    vec![Key::ShiftLeft, Key::ArrowLeft],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            ..Default::default()
-                        },
-                        key: Key::K,
-                    },
-                    vec![Key::ArrowDown],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            alt_left: true,
-                            ..Default::default()
-                        },
-                        key: Key::K,
-                    },
-                    vec![Key::ShiftLeft, Key::ArrowDown],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            ..Default::default()
-                        },
-                        key: Key::L,
-                    },
-                    vec![Key::ArrowRight],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            alt_left: true,
-                            ..Default::default()
-                        },
-                        key: Key::L,
-                    },
-                    vec![Key::ShiftLeft, Key::ArrowRight],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            ..Default::default()
-                        },
-                        key: Key::I,
-                    },
-                    vec![Key::ArrowUp],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            alt_left: true,
-                            ..Default::default()
-                        },
-                        key: Key::I,
-                    },
-                    vec![Key::ShiftLeft, Key::ArrowUp],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            ..Default::default()
-                        },
-                        key: Key::U,
-                    },
-                    vec![Key::Home],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            alt_left: true,
-                            ..Default::default()
-                        },
-                        key: Key::U,
-                    },
-                    vec![Key::ShiftLeft, Key::Home],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            ..Default::default()
-                        },
-                        key: Key::O,
-                    },
-                    vec![Key::End],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            alt_left: true,
-                            ..Default::default()
-                        },
-                        key: Key::O,
-                    },
-                    vec![Key::ShiftLeft, Key::End],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            ..Default::default()
-                        },
-                        key: Key::H,
-                    },
-                    vec![Key::CtrlLeft, Key::ArrowLeft],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            alt_left: true,
-                            ..Default::default()
-                        },
-                        key: Key::H,
-                    },
-                    vec![Key::CtrlLeft, Key::ShiftLeft, Key::ArrowLeft],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            ..Default::default()
-                        },
-                        key: Key::Semicolon,
-                    },
-                    vec![Key::CtrlLeft, Key::ArrowRight],
-                ),
-                (
-                    Combination {
-                        modifiers: Modifiers {
-                            capslock: true,
-                            alt_left: true,
-                            ..Default::default()
-                        },
-                        key: Key::Semicolon,
-                    },
-                    vec![Key::CtrlLeft, Key::ShiftLeft, Key::ArrowRight],
-                ),
-            ]),
-            ..Default::default()
+    pub fn new(config: &Config) -> Self {
+        let mut res = Self::default();
+        res.parse_config(config);
+        res
+    }
+
+    fn parse_config(&mut self, config: &Config) {
+        for mapping in &config.mappings {
+            self.mappings
+                .insert(mapping.on.clone(), mapping.send.clone());
         }
     }
 
     pub fn handle(&mut self, event: InputEvent) -> Vec<InputEvent> {
         let mut output_events = Vec::new();
         if Modifiers::is_modifier(&event) {
-            // TODO: improve modifier handling, we cannot always bubble them, see caps+alt+j
             self.modifier_state.update_from(&event);
             // consume capslock, forward all other modifiers
             if event.code != Key::Capslock {

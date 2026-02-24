@@ -1,0 +1,212 @@
+{
+  "mappings": [
+    {
+      "on": {
+        "modifiers": {
+          "capslock": true
+        },
+        "key": "j"
+      },
+      "send": [
+        "arrow_left"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "alt_left": true,
+          "capslock": true
+        },
+        "key": "j"
+      },
+      "send": [
+        "shift_left",
+        "arrow_left"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "capslock": true
+        },
+        "key": "k"
+      },
+      "send": [
+        "arrow_down"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "alt_left": true,
+          "capslock": true
+        },
+        "key": "k"
+      },
+      "send": [
+        "shift_left",
+        "arrow_down"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "capslock": true
+        },
+        "key": "l"
+      },
+      "send": [
+        "arrow_right"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "alt_left": true,
+          "capslock": true
+        },
+        "key": "l"
+      },
+      "send": [
+        "shift_left",
+        "arrow_right"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "capslock": true
+        },
+        "key": "i"
+      },
+      "send": [
+        "arrow_up"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "alt_left": true,
+          "capslock": true
+        },
+        "key": "i"
+      },
+      "send": [
+        "shift_left",
+        "arrow_up"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "capslock": true
+        },
+        "key": "u"
+      },
+      "send": [
+        "home"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "alt_left": true,
+          "capslock": true
+        },
+        "key": "u"
+      },
+      "send": [
+        "shift_left",
+        "home"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "capslock": true
+        },
+        "key": "o"
+      },
+      "send": [
+        "end"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "alt_left": true,
+          "capslock": true
+        },
+        "key": "o"
+      },
+      "send": [
+        "shift_left",
+        "end"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "capslock": true
+        },
+        "key": "h"
+      },
+      "send": [
+        "ctrl_left",
+        "arrow_left"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "alt_left": true,
+          "capslock": true
+        },
+        "key": "h"
+      },
+      "send": [
+        "ctrl_left",
+        "shift_left",
+        "arrow_left"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "capslock": true
+        },
+        "key": "semicolon"
+      },
+      "send": [
+        "ctrl_left",
+        "arrow_right"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "alt_left": true,
+          "capslock": true
+        },
+        "key": "semicolon"
+      },
+      "send": [
+        "ctrl_left",
+        "shift_left",
+        "arrow_right"
+      ]
+    },
+    {
+      "on": {
+        "modifiers": {
+          "capslock": true
+        },
+        "key": "w"
+      },
+      "send": [
+        "ctrl_left",
+        "w"
+      ]
+    }
+  ]
+}

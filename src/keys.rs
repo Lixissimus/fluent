@@ -6,8 +6,10 @@ use input_event_codes::{
     KEY_Q, KEY_R, KEY_RIGHT, KEY_RIGHTALT, KEY_RIGHTCTRL, KEY_RIGHTSHIFT, KEY_S, KEY_SEMICOLON,
     KEY_T, KEY_U, KEY_UP, KEY_V, KEY_W, KEY_X, KEY_Y, KEY_Z,
 };
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Key {
     ArrowDown,
     ArrowLeft,

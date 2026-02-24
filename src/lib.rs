@@ -2,17 +2,23 @@ use anyhow::Context;
 use std::io::{Read, Write};
 
 use crate::{
+    config::Config,
     engine::Engine,
     event::{EventBuffer, EventType, InputEvent},
 };
 
+pub mod config;
 mod engine;
-mod event;
-mod keys;
+pub mod event;
+pub mod keys;
 
-pub fn run<I: Read, O: Write>(input: &mut I, output: &mut O) -> anyhow::Result<()> {
+pub fn run<I: Read, O: Write>(
+    input: &mut I,
+    output: &mut O,
+    config: &Config,
+) -> anyhow::Result<()> {
     let mut input_buffer = EventBuffer::default();
-    let mut engine = Engine::new();
+    let mut engine = Engine::new(config);
     loop {
         input
             .read_exact(input_buffer.raw_mut())
@@ -40,4 +46,8 @@ fn print_event<O: Write>(output: &mut O, evt: &InputEvent) -> anyhow::Result<()>
         .context("error writing to stdout")?;
     output.flush().context("error flushing stdout")?;
     Ok(())
+}
+
+fn is_default<T: Default + PartialEq>(val: &T) -> bool {
+    val == &T::default()
 }
