@@ -2,12 +2,13 @@ use std::array::TryFromSliceError;
 
 use anyhow::anyhow;
 use input_event_codes::EV_KEY;
-use libc::{time_t, timeval};
 
 use crate::keys::Key;
 
+const LIBC_INPUT_EVENT_SIZE: usize = 24;
+
 #[derive(Default, Debug)]
-pub struct EventBuffer([u8; core::mem::size_of::<libc::input_event>()]);
+pub struct EventBuffer([u8; LIBC_INPUT_EVENT_SIZE]);
 
 impl EventBuffer {
     pub fn raw(&self) -> &[u8; core::mem::size_of::<Self>()] {
@@ -80,58 +81,30 @@ impl From<KeyValue> for i32 {
     }
 }
 
-impl From<libc::input_event> for InputEvent {
-    fn from(event: libc::input_event) -> Self {
-        Self {
-            r#type: event.type_.into(),
-            code: event.code.into(),
-            value: event.value.into(),
-        }
-    }
-}
-
-impl From<&InputEvent> for libc::input_event {
-    fn from(input: &InputEvent) -> Self {
-        Self {
-            // TODO: add time to InputEvent
-            time: timeval {
-                tv_sec: 0,
-                tv_usec: 0,
-            },
-            type_: input.r#type.into(),
-            code: input.code.into(),
-            value: input.value.into(),
-        }
-    }
-}
-
 impl TryFrom<&EventBuffer> for InputEvent {
     type Error = TryFromSliceError;
 
     fn try_from(buffer: &EventBuffer) -> Result<Self, Self::Error> {
-        Ok(libc::input_event {
-            time: timeval {
-                tv_sec: time_t::from_ne_bytes(buffer.0[..8].try_into()?),
-                tv_usec: time_t::from_ne_bytes(buffer.0[8..16].try_into()?),
-            },
-            type_: u16::from_ne_bytes(buffer.0[16..18].try_into()?),
-            code: u16::from_ne_bytes(buffer.0[18..20].try_into()?),
-            value: i32::from_ne_bytes(buffer.0[20..24].try_into()?),
-        }
-        .into())
+        Ok(InputEvent {
+            // TODO: first 16 bits contain timestamp, add to InputEvent
+            r#type: u16::from_ne_bytes(buffer.0[16..18].try_into()?).into(),
+            code: u16::from_ne_bytes(buffer.0[18..20].try_into()?).into(),
+            value: i32::from_ne_bytes(buffer.0[20..24].try_into()?).into(),
+        })
     }
 }
 
 impl From<&InputEvent> for EventBuffer {
     fn from(event: &InputEvent) -> Self {
         let mut buffer = EventBuffer::default();
-        // TODO: implement direct conversion without libc::input_event?
-        let raw_event: libc::input_event = event.into();
-        buffer.0[0..8].copy_from_slice(&raw_event.time.tv_sec.to_ne_bytes());
-        buffer.0[8..16].copy_from_slice(&raw_event.time.tv_usec.to_ne_bytes());
-        buffer.0[16..18].copy_from_slice(&raw_event.type_.to_ne_bytes());
-        buffer.0[18..20].copy_from_slice(&raw_event.code.to_ne_bytes());
-        buffer.0[20..24].copy_from_slice(&raw_event.value.to_ne_bytes());
+        // TODO: add timestamp to first 2 bytes
+        buffer.0[0..16].copy_from_slice(&[0; 16]);
+        let event_type: u16 = event.r#type.into();
+        let event_code: u16 = event.code.into();
+        let event_value: i32 = event.value.into();
+        buffer.0[16..18].copy_from_slice(&event_type.to_ne_bytes());
+        buffer.0[18..20].copy_from_slice(&event_code.to_ne_bytes());
+        buffer.0[20..24].copy_from_slice(&event_value.to_ne_bytes());
         buffer
     }
 }
