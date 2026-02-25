@@ -11,9 +11,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Key {
+    #[serde(rename = "down")]
     ArrowDown,
+    #[serde(rename = "left")]
     ArrowLeft,
+    #[serde(rename = "right")]
     ArrowRight,
+    #[serde(rename = "up")]
     ArrowUp,
 
     Home,
@@ -55,15 +59,25 @@ pub enum Key {
     Y,
     Z,
 
+    #[serde(rename = "0")]
     Num0,
+    #[serde(rename = "1")]
     Num1,
+    #[serde(rename = "2")]
     Num2,
+    #[serde(rename = "3")]
     Num3,
+    #[serde(rename = "4")]
     Num4,
+    #[serde(rename = "5")]
     Num5,
+    #[serde(rename = "6")]
     Num6,
+    #[serde(rename = "7")]
     Num7,
+    #[serde(rename = "8")]
     Num8,
+    #[serde(rename = "9")]
     Num9,
 
     NumPad0,
@@ -77,6 +91,7 @@ pub enum Key {
     NumPad8,
     NumPad9,
 
+    #[serde(rename = ";")]
     Semicolon,
 
     Other(u16),

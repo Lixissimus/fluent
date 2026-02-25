@@ -8,9 +8,10 @@ use crate::{
 };
 
 pub mod config;
-mod engine;
-pub mod event;
 pub mod keys;
+
+mod engine;
+mod event;
 
 pub fn run<I: Read, O: Write>(
     input: &mut I,
@@ -18,7 +19,7 @@ pub fn run<I: Read, O: Write>(
     config: &Config,
 ) -> anyhow::Result<()> {
     let mut input_buffer = EventBuffer::default();
-    let mut engine = Engine::new(config);
+    let mut engine = Engine::new(config)?;
     loop {
         input
             .read_exact(input_buffer.raw_mut())
@@ -46,8 +47,4 @@ fn print_event<O: Write>(output: &mut O, evt: &InputEvent) -> anyhow::Result<()>
         .context("error writing to stdout")?;
     output.flush().context("error flushing stdout")?;
     Ok(())
-}
-
-fn is_default<T: Default + PartialEq>(val: &T) -> bool {
-    val == &T::default()
 }

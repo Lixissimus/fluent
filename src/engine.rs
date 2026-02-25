@@ -13,17 +13,15 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new(config: &Config) -> Self {
-        let mut res = Self::default();
-        res.parse_config(config);
-        res
-    }
-
-    fn parse_config(&mut self, config: &Config) {
+    pub fn new(config: &Config) -> anyhow::Result<Self> {
+        let mut mappings = HashMap::new();
         for mapping in &config.mappings {
-            self.mappings
-                .insert(mapping.on.clone(), mapping.send.clone());
+            mappings.insert((&mapping.on).try_into()?, mapping.send.clone());
         }
+        Ok(Self {
+            modifier_state: Modifiers::default(),
+            mappings,
+        })
     }
 
     pub fn handle(&mut self, event: InputEvent) -> Vec<InputEvent> {

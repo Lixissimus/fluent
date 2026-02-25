@@ -1,10 +1,9 @@
 use std::array::TryFromSliceError;
 
+use anyhow::anyhow;
 use input_event_codes::EV_KEY;
 use libc::{time_t, timeval};
-use serde::{Deserialize, Serialize};
 
-use crate::is_default;
 use crate::keys::Key;
 
 #[derive(Default, Debug)]
@@ -137,22 +136,14 @@ impl From<&InputEvent> for EventBuffer {
     }
 }
 
-#[derive(Debug, Default, Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
-#[serde(default, deny_unknown_fields)]
+#[derive(Debug, Default, Hash, PartialEq, Eq, Clone)]
 pub struct Modifiers {
-    #[serde(skip_serializing_if = "is_default")]
     pub ctrl_left: bool,
-    #[serde(skip_serializing_if = "is_default")]
     pub ctrl_right: bool,
-    #[serde(skip_serializing_if = "is_default")]
     pub alt_left: bool,
-    #[serde(skip_serializing_if = "is_default")]
     pub alt_right: bool,
-    #[serde(skip_serializing_if = "is_default")]
     pub shift_left: bool,
-    #[serde(skip_serializing_if = "is_default")]
     pub shift_right: bool,
-    #[serde(skip_serializing_if = "is_default")]
     pub capslock: bool,
 }
 
@@ -188,8 +179,63 @@ impl Modifiers {
     }
 }
 
-#[derive(Debug, Hash, PartialEq, Eq, Serialize, Deserialize, Clone)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub struct Combination {
     pub modifiers: Modifiers,
     pub key: Key,
+}
+
+impl TryFrom<&Vec<Key>> for Combination {
+    // TODO: custom errors?
+    type Error = anyhow::Error;
+
+    fn try_from(keys: &Vec<Key>) -> Result<Self, Self::Error> {
+        let mut modifiers = Modifiers::default();
+        // destructure to ensure update on new modifiers
+        let Modifiers {
+            ctrl_left,
+            ctrl_right,
+            alt_left,
+            alt_right,
+            shift_left,
+            shift_right,
+            capslock,
+        } = &mut modifiers;
+        let mut trigger = Option::None;
+
+        for key in keys {
+            match key {
+                Key::CtrlLeft => *ctrl_left = true,
+                Key::CtrlRight => *ctrl_right = true,
+                Key::AltLeft => *alt_left = true,
+                Key::AltRight => *alt_right = true,
+                Key::ShiftLeft => *shift_left = true,
+                Key::ShiftRight => *shift_right = true,
+                Key::Capslock => *capslock = true,
+                key => {
+                    trigger = {
+                        if trigger.is_some() {
+                            return Err(anyhow!(
+                                "multiple non-modifier keys found in key sequence {:?}",
+                                keys
+                            ));
+                        }
+                        Some(*key)
+                    }
+                }
+            }
+        }
+
+        let Some(trigger) = trigger else {
+            return Err(anyhow!(
+                "no non-modifier key found in key sequence {:?}",
+                keys
+            ));
+        };
+
+        Ok(Self {
+            modifiers,
+            key: trigger,
+        })
+    }
 }
