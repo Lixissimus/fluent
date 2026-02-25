@@ -1,6 +1,5 @@
 use std::array::TryFromSliceError;
 
-use anyhow::anyhow;
 use input_event_codes::EV_KEY;
 
 use crate::keys::Key;
@@ -25,6 +24,32 @@ pub struct InputEvent {
     pub r#type: EventType,
     pub code: Key,
     pub value: KeyValue,
+}
+
+impl InputEvent {
+    pub fn key_press(key: Key) -> Self {
+        Self {
+            r#type: EventType::Key,
+            code: key,
+            value: KeyValue::Press,
+        }
+    }
+
+    pub fn key_repeat(key: Key) -> Self {
+        Self {
+            r#type: EventType::Key,
+            code: key,
+            value: KeyValue::Repeat,
+        }
+    }
+
+    pub fn key_release(key: Key) -> Self {
+        Self {
+            r#type: EventType::Key,
+            code: key,
+            value: KeyValue::Release,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -106,109 +131,5 @@ impl From<&InputEvent> for EventBuffer {
         buffer.0[18..20].copy_from_slice(&event_code.to_ne_bytes());
         buffer.0[20..24].copy_from_slice(&event_value.to_ne_bytes());
         buffer
-    }
-}
-
-#[derive(Debug, Default, Hash, PartialEq, Eq, Clone)]
-pub struct Modifiers {
-    pub ctrl_left: bool,
-    pub ctrl_right: bool,
-    pub alt_left: bool,
-    pub alt_right: bool,
-    pub shift_left: bool,
-    pub shift_right: bool,
-    pub capslock: bool,
-}
-
-impl Modifiers {
-    pub fn is_modifier(event: &InputEvent) -> bool {
-        match event.code {
-            Key::CtrlLeft
-            | Key::CtrlRight
-            | Key::AltLeft
-            | Key::AltRight
-            | Key::ShiftLeft
-            | Key::ShiftRight
-            | Key::Capslock => true,
-            _ => false,
-        }
-    }
-
-    pub fn update_from(&mut self, event: &InputEvent) {
-        let is_pressed = match event.value {
-            KeyValue::Press | KeyValue::Repeat => true,
-            _ => false,
-        };
-        match event.code {
-            Key::CtrlLeft => self.ctrl_left = is_pressed,
-            Key::CtrlRight => self.ctrl_right = is_pressed,
-            Key::AltLeft => self.alt_left = is_pressed,
-            Key::AltRight => self.alt_right = is_pressed,
-            Key::ShiftLeft => self.shift_left = is_pressed,
-            Key::ShiftRight => self.shift_right = is_pressed,
-            Key::Capslock => self.capslock = is_pressed,
-            _ => (),
-        }
-    }
-}
-
-#[derive(Debug, Hash, PartialEq, Eq, Clone)]
-pub struct Combination {
-    pub modifiers: Modifiers,
-    pub key: Key,
-}
-
-impl TryFrom<&Vec<Key>> for Combination {
-    // TODO: custom errors?
-    type Error = anyhow::Error;
-
-    fn try_from(keys: &Vec<Key>) -> Result<Self, Self::Error> {
-        let mut modifiers = Modifiers::default();
-        // destructure to ensure update on new modifiers
-        let Modifiers {
-            ctrl_left,
-            ctrl_right,
-            alt_left,
-            alt_right,
-            shift_left,
-            shift_right,
-            capslock,
-        } = &mut modifiers;
-        let mut trigger = Option::None;
-
-        for key in keys {
-            match key {
-                Key::CtrlLeft => *ctrl_left = true,
-                Key::CtrlRight => *ctrl_right = true,
-                Key::AltLeft => *alt_left = true,
-                Key::AltRight => *alt_right = true,
-                Key::ShiftLeft => *shift_left = true,
-                Key::ShiftRight => *shift_right = true,
-                Key::Capslock => *capslock = true,
-                key => {
-                    trigger = {
-                        if trigger.is_some() {
-                            return Err(anyhow!(
-                                "multiple non-modifier keys found in key sequence {:?}",
-                                keys
-                            ));
-                        }
-                        Some(*key)
-                    }
-                }
-            }
-        }
-
-        let Some(trigger) = trigger else {
-            return Err(anyhow!(
-                "no non-modifier key found in key sequence {:?}",
-                keys
-            ));
-        };
-
-        Ok(Self {
-            modifiers,
-            key: trigger,
-        })
     }
 }

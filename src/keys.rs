@@ -8,7 +8,7 @@ use input_event_codes::{
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Key {
     #[serde(rename = "down")]
