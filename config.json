@@ -203,6 +203,15 @@
         "ctrl_left",
         "v"
       ]
+    },
+    {
+      "on": [
+        "capslock",
+        "backspace"
+      ],
+      "send": [
+        "delete"
+      ]
     }
   ]
 }

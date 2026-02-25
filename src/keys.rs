@@ -1,10 +1,10 @@
 use input_event_codes::{
-    KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_A, KEY_B, KEY_C,
-    KEY_CAPSLOCK, KEY_D, KEY_DOWN, KEY_E, KEY_END, KEY_F, KEY_G, KEY_H, KEY_HOME, KEY_I, KEY_J,
-    KEY_K, KEY_KP0, KEY_KP1, KEY_KP2, KEY_KP3, KEY_KP4, KEY_KP5, KEY_KP6, KEY_KP7, KEY_KP8,
-    KEY_KP9, KEY_L, KEY_LEFT, KEY_LEFTALT, KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_M, KEY_N, KEY_O, KEY_P,
-    KEY_Q, KEY_R, KEY_RIGHT, KEY_RIGHTALT, KEY_RIGHTCTRL, KEY_RIGHTSHIFT, KEY_S, KEY_SEMICOLON,
-    KEY_T, KEY_U, KEY_UP, KEY_V, KEY_W, KEY_X, KEY_Y, KEY_Z,
+    KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_A, KEY_B,
+    KEY_BACKSPACE, KEY_C, KEY_CAPSLOCK, KEY_D, KEY_DELETE, KEY_DOWN, KEY_E, KEY_END, KEY_F, KEY_G,
+    KEY_H, KEY_HOME, KEY_I, KEY_J, KEY_K, KEY_KP0, KEY_KP1, KEY_KP2, KEY_KP3, KEY_KP4, KEY_KP5,
+    KEY_KP6, KEY_KP7, KEY_KP8, KEY_KP9, KEY_L, KEY_LEFT, KEY_LEFTALT, KEY_LEFTCTRL, KEY_LEFTSHIFT,
+    KEY_M, KEY_N, KEY_O, KEY_P, KEY_Q, KEY_R, KEY_RIGHT, KEY_RIGHTALT, KEY_RIGHTCTRL,
+    KEY_RIGHTSHIFT, KEY_S, KEY_SEMICOLON, KEY_T, KEY_U, KEY_UP, KEY_V, KEY_W, KEY_X, KEY_Y, KEY_Z,
 };
 use serde::{Deserialize, Serialize};
 
@@ -93,6 +93,8 @@ pub enum Key {
 
     #[serde(rename = ";")]
     Semicolon,
+    Backspace,
+    Delete,
 
     Other(u16),
 }
@@ -166,6 +168,8 @@ impl From<u16> for Key {
             KEY_KP9!() => Self::NumPad9,
 
             KEY_SEMICOLON!() => Self::Semicolon,
+            KEY_BACKSPACE!() => Self::Backspace,
+            KEY_DELETE!() => Self::Delete,
 
             code => Self::Other(code),
         }
@@ -240,6 +244,8 @@ impl From<Key> for u16 {
             Key::NumPad9 => KEY_KP9!(),
 
             Key::Semicolon => KEY_SEMICOLON!(),
+            Key::Backspace => KEY_BACKSPACE!(),
+            Key::Delete => KEY_DELETE!(),
 
             Key::Other(code) => code,
         }
