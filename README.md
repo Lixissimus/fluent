@@ -7,7 +7,7 @@ sleep 1 && intercept -g /dev/input/by-id/usb-Razer_Razer_BlackWidow_Elite-event-
 
 ## TODO
 
-- run as service using udevmon
+- add delay when sending key events and timestamp and EV_SYN: https://gitlab.com/interception/linux/tools#correct-synthesization-of-event-sequences
 - create arch package
 - enable logging
 - allow to not only send keys but also trigger commands

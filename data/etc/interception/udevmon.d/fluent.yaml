@@ -1,0 +1,3 @@
+- JOB: intercept -g $DEVNODE | fluent | uinput -d $DEVNODE
+  DEVICE:
+    LINK: .*-event-kbd
