@@ -13,9 +13,37 @@ pub struct Engine {
 
 #[derive(Clone)]
 enum State {
+    /// `Idle` state is the state where all the keys that are in the state's vector have been forwarded as key presses.
+    /// The state's vector can be considered a list of pending release events.
+    /// Whenever we leave `Idle`, we must ensure that we send matching key release events for all key press events
+    /// that were forwarded.
+    /// This also means that when we enter `Idle` with a non-empty list of keys, we must send key presses for
+    /// all those events.
+    /// Whatever key event happens while we stay in idle must be forwarded. This is in contrast to all other states
+    /// where we consume all key events and not forward them directly. We only forward them once they bring us back into
+    /// `Idle`.
     Idle(Vec<Key>),
+    /// `PartialHotkey` state is the state where we have a sequence of events that _could_ become a hotkey match.
+    /// The sequence of keys is stored in the state's vector. Incoming key events modify that sequence until it eiter
+    /// results in a complete hotkey match and a transition into `CompleteHotkey` or a match becomes impossible and it
+    /// leads back to `Idle`.
     PartialHotkey(Vec<Key>),
-    CompleteHotkey { trigger: Vec<Key>, send: Vec<Key> },
+    /// `CompleteHotkey` state is the state where we had a matching hotkey pressed. When we enter this state, we send a
+    /// key press for the configured hotkey. When a key repeat is sent in this state, it send a matching key repeat of
+    /// the hotkeys non-modifier key. Key press events are ignored in this state. A key release event results in key
+    /// release events of the configured hotkey and transitions either to `ReleasingHotkey` when there are still keys
+    /// pressed, or to `Idle`. `pressed` contains the sequence of keys that activated the hotkey, `triggered` contains
+    /// the key sequence that was triggered by the hotkey.
+    CompleteHotkey {
+        pressed: Vec<Key>,
+        triggered: Vec<Key>,
+    },
+    /// `ReleasingHotkey` state is the state where we enter once a hotkey was released but there are still some keys of
+    /// it pressed. If a new key press comes it that results in a new hotkey match, we transition back to
+    /// `CompleteHotkey`. If a new key press comes in that _could_ become a hotkey match, we transition to
+    /// `PartialHotkey`. If a new key press comes in that makes a match impossible, we got to `Idle`, sending key press
+    /// events for all pressed events.
+    /// Key releases will make us stay here, until no keys are pressed anymore. Then we transition back to `Idle`.
     ReleasingHotkey(Vec<Key>),
 }
 
@@ -27,7 +55,6 @@ impl Engine {
         })
     }
 
-    // TODO: describe in picture, find duplications and maybe refactor them
     pub fn handle(&mut self, event: InputEvent) -> Vec<InputEvent> {
         let (new_state, send_event) = match (&self.state, event.value) {
             (State::Idle(pressed), KeyValue::Press) => {
@@ -35,7 +62,6 @@ impl Engine {
                 now_pressed.push(event.code);
                 match self.hotkeys.query(&KeySet::from_iter(now_pressed.clone())) {
                     Match::Impossible => (
-                        // stay idle, forward key press
                         State::Idle(now_pressed.clone()),
                         now_pressed
                             .iter()
@@ -51,24 +77,26 @@ impl Engine {
 
                         (State::PartialHotkey(now_pressed), send_keys)
                     }
-                    Match::Complete(mapped_keys) => {
+                    Match::Complete(trigger_keys) => {
                         let mut send_keys: Vec<InputEvent> = pressed
                             .iter()
                             .map(|key| InputEvent::key_release(*key))
                             .rev()
                             .collect();
-                        send_keys.extend(mapped_keys.iter().map(|key| InputEvent::key_press(*key)));
+                        send_keys
+                            .extend(trigger_keys.iter().map(|key| InputEvent::key_press(*key)));
                         (
                             State::CompleteHotkey {
-                                trigger: now_pressed,
-                                send: mapped_keys.clone(),
+                                pressed: now_pressed,
+                                triggered: trigger_keys.clone(),
                             },
                             send_keys,
                         )
                     }
                 }
             }
-            (State::PartialHotkey(pressed), KeyValue::Press) => {
+            (State::PartialHotkey(pressed), KeyValue::Press)
+            | (State::ReleasingHotkey(pressed), KeyValue::Press) => {
                 let mut now_pressed = pressed.clone();
                 now_pressed.push(event.code);
                 match self.hotkeys.query(&KeySet::from_iter(now_pressed.clone())) {
@@ -80,54 +108,41 @@ impl Engine {
                             .collect(),
                     ),
                     Match::Possible => (State::PartialHotkey(now_pressed), Vec::new()),
-                    Match::Complete(mapped_keys) => (
+                    Match::Complete(trigger_keys) => (
                         State::CompleteHotkey {
-                            trigger: now_pressed,
-                            send: mapped_keys.clone(),
+                            pressed: now_pressed,
+                            triggered: trigger_keys.clone(),
                         },
-                        mapped_keys
+                        trigger_keys
                             .iter()
                             .map(|key| InputEvent::key_press(*key))
                             .collect(),
                     ),
                 }
             }
-            (State::ReleasingHotkey(pressed), KeyValue::Press) => {
-                let mut now_pressed = pressed.clone();
-                now_pressed.push(event.code);
-                match self.hotkeys.query(&KeySet::from_iter(now_pressed.clone())) {
-                    Match::Impossible => (
-                        State::Idle(now_pressed.clone()),
-                        now_pressed
-                            .iter()
-                            .map(|key| InputEvent::key_press(*key))
-                            .collect(),
-                    ),
-                    Match::Possible => (State::PartialHotkey(now_pressed), Vec::new()),
-                    Match::Complete(mapped_keys) => (
-                        State::CompleteHotkey {
-                            trigger: now_pressed,
-                            send: mapped_keys.clone(),
-                        },
-                        mapped_keys
-                            .iter()
-                            .map(|key| InputEvent::key_press(*key))
-                            .collect(),
-                    ),
-                }
-            }
-            (State::CompleteHotkey { trigger, send }, KeyValue::Repeat) => (
-                // trigger hotkey repeat
+            (
                 State::CompleteHotkey {
-                    trigger: trigger.clone(),
-                    send: send.clone(),
+                    pressed: trigger,
+                    triggered: send,
+                },
+                KeyValue::Repeat,
+            ) => (
+                State::CompleteHotkey {
+                    pressed: trigger.clone(),
+                    triggered: send.clone(),
                 },
                 send.iter()
                     .filter(|key| !is_modifier(&key))
                     .map(|key| InputEvent::key_repeat(*key))
                     .collect(),
             ),
-            (State::CompleteHotkey { trigger, send }, KeyValue::Release) => {
+            (
+                State::CompleteHotkey {
+                    pressed: trigger,
+                    triggered: send,
+                },
+                KeyValue::Release,
+            ) => {
                 let remaining_keys: Vec<Key> = trigger
                     .iter()
                     .filter(|key| key != &&event.code)

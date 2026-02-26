@@ -7,5 +7,9 @@ sleep 1 && intercept -g /dev/input/by-id/usb-Razer_Razer_BlackWidow_Elite-event-
 
 ## TODO
 
-- create arch package
 - run as service using udevmon
+- create arch package
+- enable logging
+- allow to not only send keys but also trigger commands
+- currently interferes with ctrl + mouse wheel for zoom :(
+- vizualize state machine for documentation
