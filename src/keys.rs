@@ -5,12 +5,16 @@ use input_event_codes::{
     KEY_KP6, KEY_KP7, KEY_KP8, KEY_KP9, KEY_L, KEY_LEFT, KEY_LEFTALT, KEY_LEFTCTRL, KEY_LEFTSHIFT,
     KEY_M, KEY_N, KEY_O, KEY_P, KEY_Q, KEY_R, KEY_RIGHT, KEY_RIGHTALT, KEY_RIGHTCTRL,
     KEY_RIGHTSHIFT, KEY_S, KEY_SEMICOLON, KEY_T, KEY_U, KEY_UP, KEY_V, KEY_W, KEY_X, KEY_Y, KEY_Z,
+    SYN_REPORT,
 };
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Key {
+    #[serde(skip)]
+    SynReport,
+
     #[serde(rename = "down")]
     ArrowDown,
     #[serde(rename = "left")]
@@ -102,6 +106,8 @@ pub enum Key {
 impl From<u16> for Key {
     fn from(value: u16) -> Self {
         match value {
+            SYN_REPORT!() => Self::SynReport,
+
             KEY_DOWN!() => Self::ArrowDown,
             KEY_LEFT!() => Self::ArrowLeft,
             KEY_RIGHT!() => Self::ArrowRight,
@@ -179,6 +185,8 @@ impl From<u16> for Key {
 impl From<Key> for u16 {
     fn from(value: Key) -> Self {
         match value {
+            Key::SynReport => SYN_REPORT!(),
+
             Key::ArrowDown => KEY_DOWN!(),
             Key::ArrowLeft => KEY_LEFT!(),
             Key::ArrowRight => KEY_RIGHT!(),

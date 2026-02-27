@@ -30,10 +30,13 @@ fn pass_through_unmapped_key_events() {
     );
 
     let output_events = output.extract_events();
-    assert_eq!(output_events.len(), 3);
+    assert_eq!(output_events.len(), 6);
     assert_eq!(output_events[0], InputEvent::key_press(KEY_A!()));
-    assert_eq!(output_events[1], InputEvent::key_repeat(KEY_A!()));
-    assert_eq!(output_events[2], InputEvent::key_release(KEY_A!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_repeat(KEY_A!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
+    assert_eq!(output_events[4], InputEvent::key_release(KEY_A!()));
+    assert_eq!(output_events[5], InputEvent::syn_report());
 }
 
 #[test]
@@ -56,10 +59,13 @@ fn remap_single_key_events() {
     );
 
     let output_events = output.extract_events();
-    assert_eq!(output_events.len(), 3);
+    assert_eq!(output_events.len(), 6);
     assert_eq!(output_events[0], InputEvent::key_press(KEY_B!()));
-    assert_eq!(output_events[1], InputEvent::key_repeat(KEY_B!()));
-    assert_eq!(output_events[2], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_repeat(KEY_B!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
+    assert_eq!(output_events[4], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[5], InputEvent::syn_report());
 }
 
 #[test]
@@ -83,9 +89,11 @@ fn press_and_release_once_with_single_modifier() {
     );
 
     let output_events = output.extract_events();
-    assert_eq!(output_events.len(), 2);
+    assert_eq!(output_events.len(), 4);
     assert_eq!(output_events[0], InputEvent::key_press(KEY_B!()));
-    assert_eq!(output_events[1], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
 }
 
 #[test]
@@ -109,9 +117,11 @@ fn press_and_release_modifier_first_once_with_single_modifier() {
     );
 
     let output_events = output.extract_events();
-    assert_eq!(output_events.len(), 2);
+    assert_eq!(output_events.len(), 4);
     assert_eq!(output_events[0], InputEvent::key_press(KEY_B!()));
-    assert_eq!(output_events[1], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
 }
 
 #[test]
@@ -137,11 +147,15 @@ fn press_repeat_and_release_with_single_modifier() {
     );
 
     let output_events = output.extract_events();
-    assert_eq!(output_events.len(), 4);
+    assert_eq!(output_events.len(), 8);
     assert_eq!(output_events[0], InputEvent::key_press(KEY_B!()));
-    assert_eq!(output_events[1], InputEvent::key_repeat(KEY_B!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
     assert_eq!(output_events[2], InputEvent::key_repeat(KEY_B!()));
-    assert_eq!(output_events[3], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
+    assert_eq!(output_events[4], InputEvent::key_repeat(KEY_B!()));
+    assert_eq!(output_events[5], InputEvent::syn_report());
+    assert_eq!(output_events[6], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[7], InputEvent::syn_report());
 }
 
 #[test]
@@ -167,13 +181,19 @@ fn press_repeat_and_release_modifier_first_with_single_modifier() {
     );
 
     let output_events = output.extract_events();
-    assert_eq!(output_events.len(), 6);
+    assert_eq!(output_events.len(), 12);
     assert_eq!(output_events[0], InputEvent::key_press(KEY_LEFTALT!()));
-    assert_eq!(output_events[1], InputEvent::key_press(KEY_B!()));
-    assert_eq!(output_events[2], InputEvent::key_repeat(KEY_B!()));
-    assert_eq!(output_events[3], InputEvent::key_repeat(KEY_B!()));
-    assert_eq!(output_events[4], InputEvent::key_release(KEY_B!()));
-    assert_eq!(output_events[5], InputEvent::key_release(KEY_LEFTALT!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_press(KEY_B!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
+    assert_eq!(output_events[4], InputEvent::key_repeat(KEY_B!()));
+    assert_eq!(output_events[5], InputEvent::syn_report());
+    assert_eq!(output_events[6], InputEvent::key_repeat(KEY_B!()));
+    assert_eq!(output_events[7], InputEvent::syn_report());
+    assert_eq!(output_events[8], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[9], InputEvent::syn_report());
+    assert_eq!(output_events[10], InputEvent::key_release(KEY_LEFTALT!()));
+    assert_eq!(output_events[11], InputEvent::syn_report());
 }
 
 #[test]
@@ -199,11 +219,15 @@ fn press_and_release_twice_with_single_modifier() {
     );
 
     let output_events = output.extract_events();
-    assert_eq!(output_events.len(), 4);
+    assert_eq!(output_events.len(), 8);
     assert_eq!(output_events[0], InputEvent::key_press(KEY_B!()));
-    assert_eq!(output_events[1], InputEvent::key_release(KEY_B!()));
-    assert_eq!(output_events[2], InputEvent::key_press(KEY_B!()));
-    assert_eq!(output_events[3], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
+    assert_eq!(output_events[4], InputEvent::key_press(KEY_B!()));
+    assert_eq!(output_events[5], InputEvent::syn_report());
+    assert_eq!(output_events[6], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[7], InputEvent::syn_report());
 }
 
 #[test]
@@ -227,11 +251,15 @@ fn release_multiple_hotkeys_in_reverse_order() {
     );
 
     let output_events = output.extract_events();
-    assert_eq!(output_events.len(), 4);
+    assert_eq!(output_events.len(), 8);
     assert_eq!(output_events[0], InputEvent::key_press(KEY_LEFTALT!()));
-    assert_eq!(output_events[1], InputEvent::key_press(KEY_B!()));
-    assert_eq!(output_events[2], InputEvent::key_release(KEY_B!()));
-    assert_eq!(output_events[3], InputEvent::key_release(KEY_LEFTALT!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_press(KEY_B!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
+    assert_eq!(output_events[4], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[5], InputEvent::syn_report());
+    assert_eq!(output_events[6], InputEvent::key_release(KEY_LEFTALT!()));
+    assert_eq!(output_events[7], InputEvent::syn_report());
 }
 
 #[test]
@@ -255,12 +283,16 @@ fn send_collected_keys_once_match_is_impossible() {
     );
 
     let output_events = output.extract_events();
-    assert_eq!(output_events.len(), 4);
+    assert_eq!(output_events.len(), 8);
 
     assert_eq!(output_events[0], InputEvent::key_press(KEY_LEFTCTRL!()));
-    assert_eq!(output_events[1], InputEvent::key_press(KEY_A!()));
-    assert_eq!(output_events[2], InputEvent::key_release(KEY_A!()));
-    assert_eq!(output_events[3], InputEvent::key_release(KEY_LEFTCTRL!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_press(KEY_A!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
+    assert_eq!(output_events[4], InputEvent::key_release(KEY_A!()));
+    assert_eq!(output_events[5], InputEvent::syn_report());
+    assert_eq!(output_events[6], InputEvent::key_release(KEY_LEFTCTRL!()));
+    assert_eq!(output_events[7], InputEvent::syn_report());
 }
 
 #[test]
@@ -292,10 +324,12 @@ fn trigger_hotkey_in_multiple_attempts() {
     );
 
     let output_events = output.extract_events();
-    assert_eq!(output_events.len(), 2);
+    assert_eq!(output_events.len(), 4);
 
     assert_eq!(output_events[0], InputEvent::key_press(KEY_Y!()));
-    assert_eq!(output_events[1], InputEvent::key_release(KEY_Y!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_release(KEY_Y!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
 }
 
 #[test]
@@ -321,14 +355,20 @@ fn trigger_hotkey_after_unhandled_key_combination() {
     );
 
     let output_events = output.extract_events();
-    assert_eq!(output_events.len(), 6);
+    assert_eq!(output_events.len(), 12);
 
     assert_eq!(output_events[0], InputEvent::key_press(KEY_LEFTCTRL!()));
-    assert_eq!(output_events[1], InputEvent::key_press(KEY_C!()));
-    assert_eq!(output_events[2], InputEvent::key_release(KEY_C!()));
-    assert_eq!(output_events[3], InputEvent::key_release(KEY_LEFTCTRL!()));
-    assert_eq!(output_events[4], InputEvent::key_press(KEY_Y!()));
-    assert_eq!(output_events[5], InputEvent::key_release(KEY_Y!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_press(KEY_C!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
+    assert_eq!(output_events[4], InputEvent::key_release(KEY_C!()));
+    assert_eq!(output_events[5], InputEvent::syn_report());
+    assert_eq!(output_events[6], InputEvent::key_release(KEY_LEFTCTRL!()));
+    assert_eq!(output_events[7], InputEvent::syn_report());
+    assert_eq!(output_events[8], InputEvent::key_press(KEY_Y!()));
+    assert_eq!(output_events[9], InputEvent::syn_report());
+    assert_eq!(output_events[10], InputEvent::key_release(KEY_Y!()));
+    assert_eq!(output_events[11], InputEvent::syn_report());
 }
 
 #[test]

@@ -1,6 +1,6 @@
 use std::io::{self, Cursor, Read, Write};
 
-use input_event_codes::EV_KEY;
+use input_event_codes::{EV_KEY, EV_SYN, SYN_REPORT};
 
 const KEY_RELEASE: i32 = 0;
 const KEY_PRESS: i32 = 1;
@@ -98,6 +98,17 @@ impl InputEvent {
             value: KEY_RELEASE,
         })
     }
+    pub fn syn_report() -> Self {
+        Self(libc::input_event {
+            time: libc::timeval {
+                tv_sec: 0,
+                tv_usec: 0,
+            },
+            type_: EV_SYN!(),
+            code: SYN_REPORT!(),
+            value: 0,
+        })
+    }
 }
 
 impl PartialEq for InputEvent {
@@ -106,6 +117,8 @@ impl PartialEq for InputEvent {
             && self.0.time.tv_usec == other.0.time.tv_usec
             && self.0.code == other.0.code
             && self.0.type_ == other.0.type_
-            && self.0.value == other.0.value
+            // value is not specified for syn_report events
+            && (self.0.value == other.0.value
+                || self.0.type_ == EV_SYN!() && self.0.code == SYN_REPORT!())
     }
 }

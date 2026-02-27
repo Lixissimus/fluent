@@ -63,28 +63,15 @@ impl Engine {
                 match self.hotkeys.query(&KeySet::from_iter(now_pressed.clone())) {
                     Match::Impossible => (
                         State::Idle(now_pressed.clone()),
-                        now_pressed
-                            .iter()
-                            .map(|key| InputEvent::key_press(*key))
-                            .collect(),
+                        key_press_sequence(&now_pressed),
                     ),
-                    Match::Possible => {
-                        let send_keys = pressed
-                            .iter()
-                            .map(|key| InputEvent::key_release(*key))
-                            .rev()
-                            .collect();
-
-                        (State::PartialHotkey(now_pressed), send_keys)
-                    }
+                    Match::Possible => (
+                        State::PartialHotkey(now_pressed),
+                        key_release_sequence(&pressed),
+                    ),
                     Match::Complete(trigger_keys) => {
-                        let mut send_keys: Vec<InputEvent> = pressed
-                            .iter()
-                            .map(|key| InputEvent::key_release(*key))
-                            .rev()
-                            .collect();
-                        send_keys
-                            .extend(trigger_keys.iter().map(|key| InputEvent::key_press(*key)));
+                        let mut send_keys = key_release_sequence(&pressed);
+                        send_keys.extend(key_press_sequence(&trigger_keys));
                         (
                             State::CompleteHotkey {
                                 pressed: now_pressed,
@@ -102,10 +89,7 @@ impl Engine {
                 match self.hotkeys.query(&KeySet::from_iter(now_pressed.clone())) {
                     Match::Impossible => (
                         State::Idle(now_pressed.clone()),
-                        now_pressed
-                            .iter()
-                            .map(|key| InputEvent::key_press(*key))
-                            .collect(),
+                        key_press_sequence(&now_pressed),
                     ),
                     Match::Possible => (State::PartialHotkey(now_pressed), Vec::new()),
                     Match::Complete(trigger_keys) => (
@@ -113,10 +97,7 @@ impl Engine {
                             pressed: now_pressed,
                             triggered: trigger_keys.clone(),
                         },
-                        trigger_keys
-                            .iter()
-                            .map(|key| InputEvent::key_press(*key))
-                            .collect(),
+                        key_press_sequence(&trigger_keys),
                     ),
                 }
             }
@@ -131,10 +112,7 @@ impl Engine {
                     pressed: trigger.clone(),
                     triggered: send.clone(),
                 },
-                send.iter()
-                    .filter(|key| !is_modifier(&key))
-                    .map(|key| InputEvent::key_repeat(*key))
-                    .collect(),
+                key_repeat_sequence(&send),
             ),
             (
                 State::CompleteHotkey {
@@ -149,11 +127,7 @@ impl Engine {
                     .cloned()
                     .collect();
 
-                let send_keys: Vec<InputEvent> = send
-                    .iter()
-                    .map(|key| InputEvent::key_release(*key))
-                    .rev()
-                    .collect();
+                let send_keys = key_release_sequence(&send);
 
                 if remaining_keys.is_empty() {
                     (State::Idle(Vec::new()), send_keys)
@@ -183,12 +157,12 @@ impl Engine {
 
                 (
                     State::Idle(remaining_keys),
-                    vec![InputEvent::key_release(event.code)],
+                    key_release_sequence(&vec![event.code]),
                 )
             }
             (State::Idle(pressed), KeyValue::Repeat) => (
                 State::Idle(pressed.clone()),
-                vec![InputEvent::key_repeat(event.code)],
+                key_repeat_sequence(&vec![event.code]),
             ),
             (State::ReleasingHotkey(pressed), KeyValue::Release) => {
                 let remaining_keys: Vec<Key> = pressed
@@ -207,6 +181,39 @@ impl Engine {
         self.state = new_state;
         send_event
     }
+}
+
+fn key_press_sequence(keys: &Vec<Key>) -> Vec<InputEvent> {
+    keys.iter().map(|key| InputEvent::key_press(*key)).fold(
+        Vec::with_capacity(keys.len() * 2),
+        |mut res, evt| {
+            res.push(evt);
+            res.push(InputEvent::syn_report());
+            res
+        },
+    )
+}
+
+fn key_repeat_sequence(keys: &Vec<Key>) -> Vec<InputEvent> {
+    keys.iter()
+        .filter(|key| !is_modifier(&key))
+        .map(|key| InputEvent::key_repeat(*key))
+        .fold(Vec::with_capacity(keys.len() * 2), |mut res, evt| {
+            res.push(evt);
+            res.push(InputEvent::syn_report());
+            res
+        })
+}
+
+fn key_release_sequence(keys: &Vec<Key>) -> Vec<InputEvent> {
+    keys.iter()
+        .map(|key| InputEvent::key_release(*key))
+        .rev()
+        .fold(Vec::with_capacity(keys.len() * 2), |mut res, evt| {
+            res.push(evt);
+            res.push(InputEvent::syn_report());
+            res
+        })
 }
 
 #[derive(Default)]

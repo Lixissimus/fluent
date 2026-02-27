@@ -1,6 +1,6 @@
 use std::array::TryFromSliceError;
 
-use input_event_codes::EV_KEY;
+use input_event_codes::{EV_KEY, EV_SYN};
 
 use crate::keys::Key;
 
@@ -50,11 +50,20 @@ impl InputEvent {
             value: KeyValue::Release,
         }
     }
+
+    pub fn syn_report() -> Self {
+        Self {
+            r#type: EventType::Syn,
+            code: Key::SynReport,
+            value: KeyValue::Other(0),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum EventType {
     Key,
+    Syn,
     Other(u16),
 }
 
@@ -62,6 +71,9 @@ impl From<u16> for EventType {
     fn from(value: u16) -> Self {
         if value == EV_KEY!() {
             return Self::Key;
+        }
+        if value == EV_SYN!() {
+            return Self::Syn;
         }
         Self::Other(value)
     }
@@ -71,6 +83,7 @@ impl From<EventType> for u16 {
     fn from(value: EventType) -> Self {
         match value {
             EventType::Key => EV_KEY!(),
+            EventType::Syn => EV_SYN!(),
             EventType::Other(value) => value,
         }
     }
