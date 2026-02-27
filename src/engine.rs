@@ -83,7 +83,6 @@ impl Engine {
                 send_keys.extend(key_press_sequence(&triggered));
                 (State::CompleteHotkey(triggered.clone()), send_keys)
             }
-            // TODO: we filter modifiers out here, is that okay??
             (State::Idle, Action::Repeat) => (State::Idle, key_repeat_sequence(&vec![key])),
             (State::Idle, Action::Release) => (State::Idle, key_release_sequence(&vec![key])),
 
