@@ -1,5 +1,9 @@
 use anyhow::Context;
-use std::io::{Read, Write};
+use std::{
+    io::{Read, Write},
+    thread,
+    time::Duration,
+};
 
 use crate::{
     config::Config,
@@ -41,6 +45,9 @@ pub fn run<I: Read, O: Write>(
 }
 
 fn print_event<O: Write>(output: &mut O, evt: &InputEvent) -> anyhow::Result<()> {
+    // it is recommended to not send multiple events at the same time, therefore sleep a tiny bit between events
+    thread::sleep(Duration::from_micros(1));
+
     let buffer: EventBuffer = evt.into();
     output
         .write_all(buffer.raw())
