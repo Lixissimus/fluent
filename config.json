@@ -212,6 +212,16 @@
       "send": [
         "delete"
       ]
+    },
+    {
+      "on": [
+        "capslock",
+        "r"
+      ],
+      "send": [
+        "ctrl_left",
+        "r"
+      ]
     }
   ]
 }
