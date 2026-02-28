@@ -23,7 +23,7 @@ pub fn run<I: Read, O: Write>(
     config: &Config,
 ) -> anyhow::Result<()> {
     let mut input_buffer = EventBuffer::default();
-    let mut engine = Engine::new(config)?;
+    let mut engine = Engine::new(config);
     loop {
         input
             .read_exact(input_buffer.raw_mut())
