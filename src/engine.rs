@@ -79,7 +79,7 @@ impl Engine {
     fn state_transition(&self, key: Key, action: Action) -> (State, Vec<InputEvent>) {
         match (&self.state, action) {
             (State::Idle, Action::Press(Match::Impossible)) => {
-                (State::Idle, key_press_sequence(&self.now_pressed))
+                (State::Idle, key_press_sequence(&vec![key]))
             }
             (State::Idle, Action::Press(Match::Possible)) => (
                 State::PartialHotkey,

@@ -421,3 +421,35 @@ fn simple_unhandled_modifer_press_repeat_and_release_drops_repeat() {
     assert_eq!(output_events[2], InputEvent::key_release(KEY_LEFTCTRL!()));
     assert_eq!(output_events[3], InputEvent::syn_report());
 }
+
+#[test]
+fn unhandled_combination_is_forwarded() {
+    let (mut input, mut output) = common::create_event_streams(&[
+        InputEvent::key_press(KEY_LEFTCTRL!()),
+        InputEvent::key_press(KEY_C!()),
+        InputEvent::key_release(KEY_C!()),
+        InputEvent::key_release(KEY_LEFTCTRL!()),
+    ]);
+
+    let _ = fluent::run(
+        &mut input,
+        &mut output,
+        &Config {
+            mappings: vec![Mapping {
+                on: vec![Key::AltLeft, Key::X],
+                send: vec![Key::Y],
+            }],
+        },
+    );
+
+    let output_events = output.extract_events();
+    assert_eq!(output_events.len(), 8);
+    assert_eq!(output_events[0], InputEvent::key_press(KEY_LEFTCTRL!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_press(KEY_C!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
+    assert_eq!(output_events[4], InputEvent::key_release(KEY_C!()));
+    assert_eq!(output_events[5], InputEvent::syn_report());
+    assert_eq!(output_events[6], InputEvent::key_release(KEY_LEFTCTRL!()));
+    assert_eq!(output_events[7], InputEvent::syn_report());
+}
