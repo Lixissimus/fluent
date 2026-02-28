@@ -4,17 +4,17 @@ use input_event_codes::{EV_KEY, EV_SYN};
 
 use crate::keys::Key;
 
-const LIBC_INPUT_EVENT_SIZE: usize = 24;
+pub type LibcInputEventBuffer = [u8; 24];
 
 #[derive(Default, Debug)]
-pub struct EventBuffer([u8; LIBC_INPUT_EVENT_SIZE]);
+pub struct EventBuffer(LibcInputEventBuffer);
 
 impl EventBuffer {
-    pub fn raw(&self) -> &[u8; core::mem::size_of::<Self>()] {
+    pub fn raw(&self) -> &LibcInputEventBuffer {
         &self.0
     }
 
-    pub fn raw_mut(&mut self) -> &mut [u8; core::mem::size_of::<Self>()] {
+    pub fn raw_mut(&mut self) -> &mut LibcInputEventBuffer {
         &mut self.0
     }
 }

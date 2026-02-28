@@ -28,6 +28,13 @@ enum Action {
     Nothing,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum Match {
+    Impossible,
+    Possible,
+    Complete(Vec<Key>),
+}
+
 impl Engine {
     pub fn new(config: &Config) -> Self {
         Self {
@@ -164,6 +171,8 @@ struct Hotkeys {
     mappings: HashMap<KeySet, Vec<Key>>,
 }
 
+type KeySet = BTreeSet<Key>;
+
 impl Hotkeys {
     fn new(config: &Config) -> Self {
         Self {
@@ -200,15 +209,6 @@ fn is_modifier(key: &Key) -> bool {
         | Key::Capslock => true,
         _ => false,
     }
-}
-
-type KeySet = BTreeSet<Key>;
-
-#[derive(Debug, PartialEq, Eq)]
-enum Match {
-    Impossible,
-    Possible,
-    Complete(Vec<Key>),
 }
 
 #[cfg(test)]
