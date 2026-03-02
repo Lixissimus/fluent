@@ -14,12 +14,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test
         run: cargo test
-      - name: Package
-        run: |
-            rm -rf target
+      - name: Clean
+        run: rm -rf target
+      - name: Vendor dependencies
+        run:
             mkdir .cargo
             cargo vendor --locked > .cargo/config.toml
-            tar -czf fluent.tar.gz --exclude *.tar.gz .
+      - uses: ksm2/archive-action@v1
+        with:
+          format: "tar.gz"
+          name: fluent
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
