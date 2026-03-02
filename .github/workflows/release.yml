@@ -12,12 +12,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: echo ${{ github.sha }} > Release.txt
       - name: Test
-        run: cat Release.txt
+        run: cargo test
+      - name: Package
+        run: |
+            rm -rf target
+            mkdir .cargo
+            cargo vendor --locked > .cargo/config.toml
+            tar -czf fluent.tar.gz --exclude *.tar.gz .
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          files: Release.txt
+          files: fluent.tar.gz
