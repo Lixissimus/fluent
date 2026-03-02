@@ -26,6 +26,7 @@ fn pass_through_unmapped_key_events() {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         },
     );
 
@@ -55,6 +56,7 @@ fn remap_single_key_events() {
                 on: vec![Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         },
     );
 
@@ -85,6 +87,7 @@ fn press_and_release_once_with_single_modifier() {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         },
     );
 
@@ -113,6 +116,7 @@ fn press_and_release_modifier_first_once_with_single_modifier() {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         },
     );
 
@@ -143,6 +147,7 @@ fn press_repeat_and_release_with_single_modifier() {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         },
     );
 
@@ -177,6 +182,7 @@ fn press_repeat_and_release_modifier_first_with_single_modifier() {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: vec![Key::AltLeft, Key::B],
             }],
+            ..Default::default()
         },
     );
 
@@ -215,6 +221,7 @@ fn press_and_release_twice_with_single_modifier() {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         },
     );
 
@@ -247,6 +254,7 @@ fn release_multiple_hotkeys_in_reverse_order() {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: vec![Key::AltLeft, Key::B],
             }],
+            ..Default::default()
         },
     );
 
@@ -279,6 +287,7 @@ fn send_collected_keys_once_match_is_impossible() {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         },
     );
 
@@ -320,6 +329,7 @@ fn trigger_hotkey_in_multiple_attempts() {
                     send: vec![Key::Y],
                 },
             ],
+            ..Default::default()
         },
     );
 
@@ -351,6 +361,7 @@ fn trigger_hotkey_after_unhandled_key_combination() {
                 on: vec![Key::CtrlLeft, Key::X],
                 send: vec![Key::Y],
             }],
+            ..Default::default()
         },
     );
 
@@ -387,6 +398,7 @@ fn simple_handled_modifer_press_repeat_and_release() {
                 on: vec![Key::CtrlLeft, Key::X],
                 send: vec![Key::Y],
             }],
+            ..Default::default()
         },
     );
 
@@ -411,6 +423,7 @@ fn simple_unhandled_modifer_press_repeat_and_release_drops_repeat() {
                 on: vec![Key::AltLeft, Key::X],
                 send: vec![Key::Y],
             }],
+            ..Default::default()
         },
     );
 
@@ -439,6 +452,7 @@ fn unhandled_combination_is_forwarded() {
                 on: vec![Key::AltLeft, Key::X],
                 send: vec![Key::Y],
             }],
+            ..Default::default()
         },
     );
 
@@ -452,4 +466,36 @@ fn unhandled_combination_is_forwarded() {
     assert_eq!(output_events[5], InputEvent::syn_report());
     assert_eq!(output_events[6], InputEvent::key_release(KEY_LEFTCTRL!()));
     assert_eq!(output_events[7], InputEvent::syn_report());
+}
+
+#[test]
+fn regular_key_can_become_modifier() {
+    let (mut input, mut output) = common::create_event_streams(&[
+        InputEvent::key_press(KEY_A!()),
+        InputEvent::key_press(KEY_X!()),
+        InputEvent::key_repeat(KEY_X!()),
+        InputEvent::key_release(KEY_X!()),
+        InputEvent::key_release(KEY_A!()),
+    ]);
+
+    let _ = fluent::run(
+        &mut input,
+        &mut output,
+        &Config {
+            mappings: vec![Mapping {
+                on: vec![Key::A, Key::X],
+                send: vec![Key::Y],
+            }],
+            modifiers: vec![Key::A],
+        },
+    );
+
+    let output_events = output.extract_events();
+    assert_eq!(output_events.len(), 6);
+    assert_eq!(output_events[0], InputEvent::key_press(KEY_Y!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_repeat(KEY_Y!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
+    assert_eq!(output_events[4], InputEvent::key_release(KEY_Y!()));
+    assert_eq!(output_events[5], InputEvent::syn_report());
 }

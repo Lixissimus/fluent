@@ -8,6 +8,7 @@ use crate::{
 
 pub struct Engine {
     hotkeys: Hotkeys,
+    modifiers: Vec<Key>,
     state: State,
     previously_pressed: Vec<Key>,
     now_pressed: Vec<Key>,
@@ -39,6 +40,7 @@ impl Engine {
     pub fn new(config: &Config) -> Self {
         Self {
             hotkeys: Hotkeys::new(config),
+            modifiers: config.modifiers.clone(),
             state: State::Idle,
             previously_pressed: Vec::new(),
             now_pressed: Vec::new(),
@@ -90,7 +92,14 @@ impl Engine {
                 send_keys.extend(key_press_sequence(&triggered));
                 (State::CompleteHotkey(triggered.clone()), send_keys)
             }
-            (State::Idle, Action::Repeat) => (State::Idle, key_repeat_sequence(&vec![key])),
+            (State::Idle, Action::Repeat) => (
+                State::Idle,
+                if self.modifiers.contains(&key) {
+                    Vec::new()
+                } else {
+                    key_repeat_sequence(&vec![key])
+                },
+            ),
             (State::Idle, Action::Release) => (State::Idle, key_release_sequence(&vec![key])),
 
             (State::PartialHotkey, Action::Press(Match::Impossible)) => {
@@ -117,7 +126,13 @@ impl Engine {
             }
             (State::CompleteHotkey(triggered), Action::Repeat) => (
                 State::CompleteHotkey(triggered.clone()),
-                key_repeat_sequence(&triggered),
+                key_repeat_sequence(
+                    &triggered
+                        .iter()
+                        .filter(|key| !self.modifiers.contains(key))
+                        .cloned()
+                        .collect(),
+                ),
             ),
             (State::CompleteHotkey(triggered), Action::Release) => {
                 let hotkey_release = key_release_sequence(&triggered);
@@ -145,14 +160,14 @@ fn key_press_sequence(keys: &Vec<Key>) -> Vec<InputEvent> {
 }
 
 fn key_repeat_sequence(keys: &Vec<Key>) -> Vec<InputEvent> {
-    keys.iter()
-        .filter(|key| !is_modifier(&key))
-        .map(|key| InputEvent::key_repeat(*key))
-        .fold(Vec::with_capacity(keys.len() * 2), |mut res, evt| {
+    keys.iter().map(|key| InputEvent::key_repeat(*key)).fold(
+        Vec::with_capacity(keys.len() * 2),
+        |mut res, evt| {
             res.push(evt);
             res.push(InputEvent::syn_report());
             res
-        })
+        },
+    )
 }
 
 fn key_release_sequence(keys: &Vec<Key>) -> Vec<InputEvent> {
@@ -169,6 +184,7 @@ fn key_release_sequence(keys: &Vec<Key>) -> Vec<InputEvent> {
 #[derive(Default)]
 struct Hotkeys {
     mappings: HashMap<KeySet, Vec<Key>>,
+    modifiers: Vec<Key>,
 }
 
 type KeySet = BTreeSet<Key>;
@@ -181,6 +197,7 @@ impl Hotkeys {
                 .iter()
                 .map(|m| (KeySet::from_iter(m.on.clone()), m.send.clone()))
                 .collect(),
+            modifiers: config.modifiers.clone(),
         }
     }
 
@@ -190,24 +207,13 @@ impl Hotkeys {
                 return Match::Complete(send.clone());
             }
             // match is only still possible if there are only modifers pressed yet, otherwise it must be complete
-            if trigger.is_superset(combination) && combination.iter().all(is_modifier) {
+            if trigger.is_superset(combination)
+                && combination.iter().all(|key| self.modifiers.contains(key))
+            {
                 return Match::Possible;
             }
         }
         Match::Impossible
-    }
-}
-
-fn is_modifier(key: &Key) -> bool {
-    match key {
-        Key::CtrlLeft
-        | Key::CtrlRight
-        | Key::AltLeft
-        | Key::AltRight
-        | Key::ShiftLeft
-        | Key::ShiftRight
-        | Key::Capslock => true,
-        _ => false,
     }
 }
 
@@ -253,6 +259,7 @@ mod hotkeys_test {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         });
 
         let result = sut.query(&KeySet::from([Key::AltLeft, Key::C]));
@@ -267,6 +274,7 @@ mod hotkeys_test {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         });
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft, Key::A]));
@@ -281,6 +289,7 @@ mod hotkeys_test {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         });
 
         let result = sut.query(&KeySet::from([Key::AltRight]));
@@ -295,6 +304,7 @@ mod hotkeys_test {
                 on: vec![Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         });
 
         let result = sut.query(&KeySet::from([Key::AltRight]));
@@ -309,6 +319,7 @@ mod hotkeys_test {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         });
 
         let result = sut.query(&KeySet::from([]));
@@ -323,6 +334,7 @@ mod hotkeys_test {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         });
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft]));
@@ -337,6 +349,7 @@ mod hotkeys_test {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         });
 
         let result = sut.query(&KeySet::from([Key::ShiftLeft]));
@@ -351,6 +364,7 @@ mod hotkeys_test {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         });
 
         let result = sut.query(&KeySet::from([Key::ShiftLeft, Key::AltLeft]));
@@ -365,6 +379,7 @@ mod hotkeys_test {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         });
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft]));
@@ -379,6 +394,7 @@ mod hotkeys_test {
                 on: vec![Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         });
 
         let result = sut.query(&KeySet::from([Key::A]));
@@ -393,6 +409,7 @@ mod hotkeys_test {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         });
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft, Key::A]));
@@ -407,6 +424,7 @@ mod hotkeys_test {
                 on: vec![Key::CtrlLeft, Key::AltLeft, Key::A],
                 send: vec![Key::B],
             }],
+            ..Default::default()
         });
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft, Key::AltLeft, Key::A]));
@@ -427,23 +445,24 @@ mod hotkeys_test {
                     send: vec![Key::E],
                 },
                 Mapping {
-                    on: vec![Key::Capslock, Key::K],
+                    on: vec![Key::AltLeft, Key::K],
                     send: vec![Key::CtrlLeft, Key::K],
                 },
                 Mapping {
-                    on: vec![Key::CtrlLeft, Key::Capslock, Key::C],
+                    on: vec![Key::CtrlLeft, Key::AltLeft, Key::C],
                     send: vec![Key::CtrlLeft, Key::V],
                 },
             ],
+            ..Default::default()
         });
 
         assert_eq!(sut.query(&KeySet::from([Key::CtrlLeft])), Match::Possible);
         assert_eq!(
-            sut.query(&KeySet::from([Key::CtrlLeft, Key::Capslock])),
+            sut.query(&KeySet::from([Key::CtrlLeft, Key::AltLeft])),
             Match::Possible
         );
         assert_eq!(
-            sut.query(&KeySet::from([Key::CtrlLeft, Key::Capslock, Key::C])),
+            sut.query(&KeySet::from([Key::CtrlLeft, Key::AltLeft, Key::C])),
             Match::Complete(vec![Key::CtrlLeft, Key::V])
         );
     }
@@ -461,23 +480,24 @@ mod hotkeys_test {
                     send: vec![Key::E],
                 },
                 Mapping {
-                    on: vec![Key::Capslock, Key::K],
+                    on: vec![Key::ShiftLeft, Key::K],
                     send: vec![Key::CtrlLeft, Key::K],
                 },
                 Mapping {
-                    on: vec![Key::CtrlLeft, Key::Capslock, Key::C],
+                    on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::C],
                     send: vec![Key::CtrlLeft, Key::V],
                 },
             ],
+            ..Default::default()
         });
 
         assert_eq!(sut.query(&KeySet::from([Key::CtrlLeft])), Match::Possible);
         assert_eq!(
-            sut.query(&KeySet::from([Key::CtrlLeft, Key::Capslock])),
+            sut.query(&KeySet::from([Key::CtrlLeft, Key::ShiftLeft])),
             Match::Possible
         );
         assert_eq!(
-            sut.query(&KeySet::from([Key::CtrlLeft, Key::Capslock, Key::AltLeft])),
+            sut.query(&KeySet::from([Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft])),
             Match::Impossible
         );
     }
