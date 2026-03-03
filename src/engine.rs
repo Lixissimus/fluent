@@ -22,7 +22,7 @@ enum State {
 }
 
 #[derive(Debug)]
-enum Action {
+enum KeyEvent {
     Press(Match),
     Repeat,
     Release,
@@ -54,12 +54,12 @@ impl Engine {
         output
     }
 
-    fn handle_input(&mut self, event: &InputEvent) -> Action {
+    fn handle_input(&mut self, event: &InputEvent) -> KeyEvent {
         match event.value {
             KeyValue::Release => {
                 self.previously_pressed = self.now_pressed.clone();
                 self.now_pressed.retain(|key| key != &event.code);
-                Action::Release
+                KeyEvent::Release
             }
             KeyValue::Press => {
                 self.previously_pressed = self.now_pressed.clone();
@@ -68,31 +68,31 @@ impl Engine {
                     .hotkeys
                     .query(&KeySet::from_iter(self.now_pressed.clone()))
                 {
-                    Match::Impossible => Action::Press(Match::Impossible),
-                    Match::Possible => Action::Press(Match::Possible),
-                    Match::Complete(trigger_keys) => Action::Press(Match::Complete(trigger_keys)),
+                    Match::Impossible => KeyEvent::Press(Match::Impossible),
+                    Match::Possible => KeyEvent::Press(Match::Possible),
+                    Match::Complete(trigger_keys) => KeyEvent::Press(Match::Complete(trigger_keys)),
                 }
             }
-            KeyValue::Repeat => Action::Repeat,
-            KeyValue::Other(_) => Action::Nothing,
+            KeyValue::Repeat => KeyEvent::Repeat,
+            KeyValue::Other(_) => KeyEvent::Nothing,
         }
     }
 
-    fn state_transition(&self, key: Key, action: Action) -> (State, Vec<InputEvent>) {
+    fn state_transition(&self, key: Key, action: KeyEvent) -> (State, Vec<InputEvent>) {
         match (&self.state, action) {
-            (State::Idle, Action::Press(Match::Impossible)) => {
+            (State::Idle, KeyEvent::Press(Match::Impossible)) => {
                 (State::Idle, key_press_sequence(&vec![key]))
             }
-            (State::Idle, Action::Press(Match::Possible)) => (
+            (State::Idle, KeyEvent::Press(Match::Possible)) => (
                 State::PartialHotkey,
                 key_release_sequence(&self.previously_pressed),
             ),
-            (State::Idle, Action::Press(Match::Complete(triggered))) => {
+            (State::Idle, KeyEvent::Press(Match::Complete(triggered))) => {
                 let mut send_keys = key_release_sequence(&self.previously_pressed);
                 send_keys.extend(key_press_sequence(&triggered));
                 (State::CompleteHotkey(triggered.clone()), send_keys)
             }
-            (State::Idle, Action::Repeat) => (
+            (State::Idle, KeyEvent::Repeat) => (
                 State::Idle,
                 if self.modifiers.contains(&key) {
                     Vec::new()
@@ -100,20 +100,20 @@ impl Engine {
                     key_repeat_sequence(&vec![key])
                 },
             ),
-            (State::Idle, Action::Release) => (State::Idle, key_release_sequence(&vec![key])),
+            (State::Idle, KeyEvent::Release) => (State::Idle, key_release_sequence(&vec![key])),
 
-            (State::PartialHotkey, Action::Press(Match::Impossible)) => {
+            (State::PartialHotkey, KeyEvent::Press(Match::Impossible)) => {
                 (State::Idle, key_press_sequence(&self.now_pressed))
             }
-            (State::PartialHotkey, Action::Press(Match::Possible)) => {
+            (State::PartialHotkey, KeyEvent::Press(Match::Possible)) => {
                 (State::PartialHotkey, Vec::new())
             }
-            (State::PartialHotkey, Action::Press(Match::Complete(triggered))) => (
+            (State::PartialHotkey, KeyEvent::Press(Match::Complete(triggered))) => (
                 State::CompleteHotkey(triggered.clone()),
                 key_press_sequence(&triggered),
             ),
-            (State::PartialHotkey, Action::Repeat) => (State::PartialHotkey, Vec::new()),
-            (State::PartialHotkey, Action::Release) => {
+            (State::PartialHotkey, KeyEvent::Repeat) => (State::PartialHotkey, Vec::new()),
+            (State::PartialHotkey, KeyEvent::Release) => {
                 if self.now_pressed.is_empty() {
                     (State::Idle, Vec::new())
                 } else {
@@ -121,10 +121,10 @@ impl Engine {
                 }
             }
 
-            (State::CompleteHotkey(triggered), Action::Press(_)) => {
+            (State::CompleteHotkey(triggered), KeyEvent::Press(_)) => {
                 (State::CompleteHotkey(triggered.clone()), Vec::new())
             }
-            (State::CompleteHotkey(triggered), Action::Repeat) => (
+            (State::CompleteHotkey(triggered), KeyEvent::Repeat) => (
                 State::CompleteHotkey(triggered.clone()),
                 key_repeat_sequence(
                     &triggered
@@ -134,7 +134,7 @@ impl Engine {
                         .collect(),
                 ),
             ),
-            (State::CompleteHotkey(triggered), Action::Release) => {
+            (State::CompleteHotkey(triggered), KeyEvent::Release) => {
                 let hotkey_release = key_release_sequence(&triggered);
                 if self.now_pressed.is_empty() {
                     (State::Idle, hotkey_release)
@@ -143,7 +143,7 @@ impl Engine {
                 }
             }
 
-            (state, Action::Nothing) => (state.clone(), Vec::new()),
+            (state, KeyEvent::Nothing) => (state.clone(), Vec::new()),
         }
     }
 }
