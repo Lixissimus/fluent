@@ -12,19 +12,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
       - name: Test
-        run: cargo test
-      - name: Clean
+        run: cargo test --release
+      - name: Clean Workdir
         run: rm -rf target
-      - name: Vendor dependencies
-        run: |
-            mkdir .cargo
-            cargo vendor --locked > .cargo/config.toml
-      - uses: ksm2/archive-action@v1
+      - name: Package
+        uses: ksm2/archive-action@v1
         with:
           format: "tar.gz"
           name: fluent
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: fluent.tar.gz
+          files: fluent-${{github.ref_name}}.tar.gz
