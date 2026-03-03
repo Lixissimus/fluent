@@ -21,7 +21,7 @@ jobs:
         uses: ksm2/archive-action@v1
         with:
           format: "tar.gz"
-          name: fluent
+          name: fluent-${{github.ref_name}}
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
