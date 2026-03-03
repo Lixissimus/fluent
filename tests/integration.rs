@@ -1,5 +1,5 @@
 use fluent::{
-    config::{Config, Mapping},
+    config::{Config, Mapping, Mode},
     keys::Key,
 };
 use input_event_codes::{
@@ -22,11 +22,13 @@ fn pass_through_unmapped_key_events() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::CtrlLeft, Key::A],
-                send: vec![Key::B],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::CtrlLeft, Key::A],
+                    send: vec![Key::B],
+                }],
+                ..Default::default()
             }],
-            ..Default::default()
         },
     );
 
@@ -52,11 +54,13 @@ fn remap_single_key_events() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::A],
-                send: vec![Key::B],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::A],
+                    send: vec![Key::B],
+                }],
+                ..Default::default()
             }],
-            ..Default::default()
         },
     );
 
@@ -83,11 +87,13 @@ fn press_and_release_once_with_single_modifier() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::CtrlLeft, Key::A],
-                send: vec![Key::B],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::CtrlLeft, Key::A],
+                    send: vec![Key::B],
+                }],
+                ..Default::default()
             }],
-            ..Default::default()
         },
     );
 
@@ -112,11 +118,13 @@ fn press_and_release_modifier_first_once_with_single_modifier() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::CtrlLeft, Key::A],
-                send: vec![Key::B],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::CtrlLeft, Key::A],
+                    send: vec![Key::B],
+                }],
+                ..Default::default()
             }],
-            ..Default::default()
         },
     );
 
@@ -143,11 +151,13 @@ fn press_repeat_and_release_with_single_modifier() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::CtrlLeft, Key::A],
-                send: vec![Key::B],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::CtrlLeft, Key::A],
+                    send: vec![Key::B],
+                }],
+                ..Default::default()
             }],
-            ..Default::default()
         },
     );
 
@@ -178,11 +188,13 @@ fn press_repeat_and_release_modifier_first_with_single_modifier() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::CtrlLeft, Key::A],
-                send: vec![Key::AltLeft, Key::B],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::CtrlLeft, Key::A],
+                    send: vec![Key::AltLeft, Key::B],
+                }],
+                ..Default::default()
             }],
-            ..Default::default()
         },
     );
 
@@ -217,11 +229,13 @@ fn press_and_release_twice_with_single_modifier() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::CtrlLeft, Key::A],
-                send: vec![Key::B],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::CtrlLeft, Key::A],
+                    send: vec![Key::B],
+                }],
+                ..Default::default()
             }],
-            ..Default::default()
         },
     );
 
@@ -250,11 +264,13 @@ fn release_multiple_hotkeys_in_reverse_order() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::CtrlLeft, Key::A],
-                send: vec![Key::AltLeft, Key::B],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::CtrlLeft, Key::A],
+                    send: vec![Key::AltLeft, Key::B],
+                }],
+                ..Default::default()
             }],
-            ..Default::default()
         },
     );
 
@@ -283,11 +299,13 @@ fn send_collected_keys_once_match_is_impossible() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
-                send: vec![Key::B],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
+                    send: vec![Key::B],
+                }],
+                ..Default::default()
             }],
-            ..Default::default()
         },
     );
 
@@ -319,17 +337,19 @@ fn trigger_hotkey_in_multiple_attempts() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![
-                Mapping {
-                    on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
-                    send: vec![Key::AltLeft, Key::B],
-                },
-                Mapping {
-                    on: vec![Key::CtrlLeft, Key::X],
-                    send: vec![Key::Y],
-                },
-            ],
-            ..Default::default()
+            modes: vec![Mode {
+                mappings: vec![
+                    Mapping {
+                        on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
+                        send: vec![Key::AltLeft, Key::B],
+                    },
+                    Mapping {
+                        on: vec![Key::CtrlLeft, Key::X],
+                        send: vec![Key::Y],
+                    },
+                ],
+                ..Default::default()
+            }],
         },
     );
 
@@ -357,11 +377,13 @@ fn trigger_hotkey_after_unhandled_key_combination() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::CtrlLeft, Key::X],
-                send: vec![Key::Y],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::CtrlLeft, Key::X],
+                    send: vec![Key::Y],
+                }],
+                ..Default::default()
             }],
-            ..Default::default()
         },
     );
 
@@ -394,11 +416,13 @@ fn simple_handled_modifer_press_repeat_and_release() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::CtrlLeft, Key::X],
-                send: vec![Key::Y],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::CtrlLeft, Key::X],
+                    send: vec![Key::Y],
+                }],
+                ..Default::default()
             }],
-            ..Default::default()
         },
     );
 
@@ -419,11 +443,13 @@ fn simple_unhandled_modifer_press_repeat_and_release_drops_repeat() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::AltLeft, Key::X],
-                send: vec![Key::Y],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::AltLeft, Key::X],
+                    send: vec![Key::Y],
+                }],
+                ..Default::default()
             }],
-            ..Default::default()
         },
     );
 
@@ -448,11 +474,13 @@ fn unhandled_combination_is_forwarded() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::AltLeft, Key::X],
-                send: vec![Key::Y],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::AltLeft, Key::X],
+                    send: vec![Key::Y],
+                }],
+                ..Default::default()
             }],
-            ..Default::default()
         },
     );
 
@@ -482,11 +510,14 @@ fn regular_key_can_become_modifier() {
         &mut input,
         &mut output,
         &Config {
-            mappings: vec![Mapping {
-                on: vec![Key::A, Key::X],
-                send: vec![Key::Y],
+            modes: vec![Mode {
+                mappings: vec![Mapping {
+                    on: vec![Key::A, Key::X],
+                    send: vec![Key::Y],
+                }],
+                modifiers: vec![Key::A],
+                ..Default::default()
             }],
-            modifiers: vec![Key::A],
         },
     );
 

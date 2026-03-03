@@ -2,20 +2,32 @@ use serde::{Deserialize, Serialize};
 
 use crate::keys::Key;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Config {
+    pub modes: Vec<Mode>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Mode {
+    #[serde(default = "default_mode_name")]
+    pub name: String,
     #[serde(default = "default_modifiers")]
     pub modifiers: Vec<Key>,
     pub mappings: Vec<Mapping>,
 }
 
-impl Default for Config {
+impl Default for Mode {
     fn default() -> Self {
         Self {
+            name: default_mode_name(),
             modifiers: default_modifiers(),
             mappings: Default::default(),
         }
     }
+}
+
+fn default_mode_name() -> String {
+    "default".into()
 }
 
 fn default_modifiers() -> Vec<Key> {
@@ -29,7 +41,7 @@ fn default_modifiers() -> Vec<Key> {
     ]
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Mapping {
     pub on: Vec<Key>,
     pub send: Vec<Key>,

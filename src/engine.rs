@@ -1,15 +1,16 @@
 use std::collections::{BTreeSet, HashMap};
 
 use crate::{
-    config::Config,
+    config::{Config, Mapping},
     event::{InputEvent, KeyValue},
     keys::Key,
 };
 
 pub struct Engine {
-    hotkeys: Hotkeys,
-    modifiers: Vec<Key>,
+    hotkeys: HashMap<String, Hotkeys>,
+    modifiers: HashMap<String, Vec<Key>>,
     state: State,
+    mode: String,
     previously_pressed: Vec<Key>,
     now_pressed: Vec<Key>,
 }
@@ -39,9 +40,27 @@ enum Match {
 impl Engine {
     pub fn new(config: &Config) -> Self {
         Self {
-            hotkeys: Hotkeys::new(config),
-            modifiers: config.modifiers.clone(),
+            hotkeys: config
+                .modes
+                .iter()
+                .map(|mode| {
+                    (
+                        mode.name.clone(),
+                        Hotkeys::new(mode.mappings.clone(), mode.modifiers.clone()),
+                    )
+                })
+                .collect(),
+            modifiers: config
+                .modes
+                .iter()
+                .map(|mode| (mode.name.clone(), mode.modifiers.clone()))
+                .collect(),
             state: State::Idle,
+            mode: config
+                .modes
+                .first()
+                .and_then(|mode| Some(mode.name.clone()))
+                .unwrap_or_default(),
             previously_pressed: Vec::new(),
             now_pressed: Vec::new(),
         }
@@ -66,7 +85,11 @@ impl Engine {
                 self.now_pressed.push(event.code);
                 match self
                     .hotkeys
-                    .query(&KeySet::from_iter(self.now_pressed.clone()))
+                    .get(&self.mode)
+                    .and_then(|hotkey| {
+                        Some(hotkey.query(&KeySet::from_iter(self.now_pressed.clone())))
+                    })
+                    .unwrap_or(Match::Impossible)
                 {
                     Match::Impossible => KeyEvent::Press(Match::Impossible),
                     Match::Possible => KeyEvent::Press(Match::Possible),
@@ -94,7 +117,7 @@ impl Engine {
             }
             (State::Idle, KeyEvent::Repeat) => (
                 State::Idle,
-                if self.modifiers.contains(&key) {
+                if self.is_modifier(key) {
                     Vec::new()
                 } else {
                     key_repeat_sequence(&vec![key])
@@ -129,7 +152,7 @@ impl Engine {
                 key_repeat_sequence(
                     &triggered
                         .iter()
-                        .filter(|key| !self.modifiers.contains(key))
+                        .filter(|key| !self.is_modifier(**key))
                         .cloned()
                         .collect(),
                 ),
@@ -145,6 +168,13 @@ impl Engine {
 
             (state, KeyEvent::Nothing) => (state.clone(), Vec::new()),
         }
+    }
+
+    fn is_modifier(&self, key: Key) -> bool {
+        self.modifiers
+            .get(&self.mode)
+            .and_then(|modifiers| Some(modifiers.contains(&key)))
+            .unwrap_or(false)
     }
 }
 
@@ -190,14 +220,13 @@ struct Hotkeys {
 type KeySet = BTreeSet<Key>;
 
 impl Hotkeys {
-    fn new(config: &Config) -> Self {
+    fn new(mappings: Vec<Mapping>, modifiers: Vec<Key>) -> Self {
         Self {
-            mappings: config
-                .mappings
-                .iter()
-                .map(|m| (KeySet::from_iter(m.on.clone()), m.send.clone()))
+            mappings: mappings
+                .into_iter()
+                .map(|m| (KeySet::from_iter(m.on), m.send))
                 .collect(),
-            modifiers: config.modifiers.clone(),
+            modifiers,
         }
     }
 
@@ -220,14 +249,14 @@ impl Hotkeys {
 #[cfg(test)]
 mod hotkeys_test {
     use crate::{
-        config::{Config, Mapping},
+        config::Mapping,
         engine::{Hotkeys, KeySet, Match},
         keys::Key,
     };
 
     #[test]
     fn match_impossible_with_empty_config_when_modifier_is_pressed() {
-        let sut = Hotkeys::new(&Config::default());
+        let sut = Hotkeys::new(vec![], vec![]);
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft]));
 
@@ -236,7 +265,7 @@ mod hotkeys_test {
 
     #[test]
     fn match_impossible_with_empty_config_when_non_modifier_is_pressed() {
-        let sut = Hotkeys::new(&Config::default());
+        let sut = Hotkeys::new(vec![], vec![]);
 
         let result = sut.query(&KeySet::from([Key::A]));
 
@@ -245,7 +274,7 @@ mod hotkeys_test {
 
     #[test]
     fn match_impossible_with_empty_config_when_nothing_is_pressed() {
-        let sut = Hotkeys::new(&Config::default());
+        let sut = Hotkeys::new(vec![], vec![]);
 
         let result = sut.query(&KeySet::from([]));
 
@@ -254,13 +283,13 @@ mod hotkeys_test {
 
     #[test]
     fn match_impossible_when_uncofigured_combination_pressed() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![Mapping {
+        let sut = Hotkeys::new(
+            vec![Mapping {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                 send: vec![Key::B],
             }],
-            ..Default::default()
-        });
+            vec![],
+        );
 
         let result = sut.query(&KeySet::from([Key::AltLeft, Key::C]));
 
@@ -269,13 +298,13 @@ mod hotkeys_test {
 
     #[test]
     fn match_impossible_when_non_modifier_pressed_and_not_complete() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![Mapping {
+        let sut = Hotkeys::new(
+            vec![Mapping {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                 send: vec![Key::B],
             }],
-            ..Default::default()
-        });
+            vec![],
+        );
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft, Key::A]));
 
@@ -284,13 +313,13 @@ mod hotkeys_test {
 
     #[test]
     fn match_impossible_when_wrong_modifier_pressed() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![Mapping {
+        let sut = Hotkeys::new(
+            vec![Mapping {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                 send: vec![Key::B],
             }],
-            ..Default::default()
-        });
+            vec![],
+        );
 
         let result = sut.query(&KeySet::from([Key::AltRight]));
 
@@ -299,13 +328,13 @@ mod hotkeys_test {
 
     #[test]
     fn match_impossible_when_modifier_pressed_but_none_is_configured() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![Mapping {
+        let sut = Hotkeys::new(
+            vec![Mapping {
                 on: vec![Key::A],
                 send: vec![Key::B],
             }],
-            ..Default::default()
-        });
+            vec![],
+        );
 
         let result = sut.query(&KeySet::from([Key::AltRight]));
 
@@ -314,13 +343,13 @@ mod hotkeys_test {
 
     #[test]
     fn match_possible_when_nothing_is_pressed() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![Mapping {
+        let sut = Hotkeys::new(
+            vec![Mapping {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: vec![Key::B],
             }],
-            ..Default::default()
-        });
+            vec![],
+        );
 
         let result = sut.query(&KeySet::from([]));
 
@@ -329,13 +358,13 @@ mod hotkeys_test {
 
     #[test]
     fn match_possible_when_single_matching_modifier_is_pressed() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![Mapping {
+        let sut = Hotkeys::new(
+            vec![Mapping {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: vec![Key::B],
             }],
-            ..Default::default()
-        });
+            vec![Key::CtrlLeft],
+        );
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft]));
 
@@ -344,13 +373,13 @@ mod hotkeys_test {
 
     #[test]
     fn match_possible_when_one_of_multiple_matching_modifiers_are_pressed() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![Mapping {
+        let sut = Hotkeys::new(
+            vec![Mapping {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
                 send: vec![Key::B],
             }],
-            ..Default::default()
-        });
+            vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft],
+        );
 
         let result = sut.query(&KeySet::from([Key::ShiftLeft]));
 
@@ -359,13 +388,13 @@ mod hotkeys_test {
 
     #[test]
     fn match_possible_when_some_of_multiple_matching_modifiers_are_pressed() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![Mapping {
+        let sut = Hotkeys::new(
+            vec![Mapping {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
                 send: vec![Key::B],
             }],
-            ..Default::default()
-        });
+            vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft],
+        );
 
         let result = sut.query(&KeySet::from([Key::ShiftLeft, Key::AltLeft]));
 
@@ -374,13 +403,13 @@ mod hotkeys_test {
 
     #[test]
     fn match_possible_when_all_of_multiple_matching_modifiers_are_pressed() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![Mapping {
+        let sut = Hotkeys::new(
+            vec![Mapping {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
                 send: vec![Key::B],
             }],
-            ..Default::default()
-        });
+            vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft],
+        );
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft]));
 
@@ -389,13 +418,13 @@ mod hotkeys_test {
 
     #[test]
     fn match_complete_when_no_modifier_configured() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![Mapping {
+        let sut = Hotkeys::new(
+            vec![Mapping {
                 on: vec![Key::A],
                 send: vec![Key::B],
             }],
-            ..Default::default()
-        });
+            vec![Key::CtrlLeft],
+        );
 
         let result = sut.query(&KeySet::from([Key::A]));
 
@@ -404,13 +433,13 @@ mod hotkeys_test {
 
     #[test]
     fn match_complete_with_single_modifier() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![Mapping {
+        let sut = Hotkeys::new(
+            vec![Mapping {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: vec![Key::B],
             }],
-            ..Default::default()
-        });
+            vec![Key::CtrlLeft],
+        );
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft, Key::A]));
 
@@ -419,13 +448,13 @@ mod hotkeys_test {
 
     #[test]
     fn match_complete_with_multiple_modifiers() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![Mapping {
+        let sut = Hotkeys::new(
+            vec![Mapping {
                 on: vec![Key::CtrlLeft, Key::AltLeft, Key::A],
                 send: vec![Key::B],
             }],
-            ..Default::default()
-        });
+            vec![Key::CtrlLeft, Key::AltLeft],
+        );
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft, Key::AltLeft, Key::A]));
 
@@ -434,8 +463,8 @@ mod hotkeys_test {
 
     #[test]
     fn incremental_with_multiple_hotkeys_when_match_is_found() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![
+        let sut = Hotkeys::new(
+            vec![
                 Mapping {
                     on: vec![Key::CtrlLeft, Key::AltLeft, Key::A],
                     send: vec![Key::B],
@@ -453,8 +482,8 @@ mod hotkeys_test {
                     send: vec![Key::CtrlLeft, Key::V],
                 },
             ],
-            ..Default::default()
-        });
+            vec![Key::CtrlLeft, Key::AltLeft],
+        );
 
         assert_eq!(sut.query(&KeySet::from([Key::CtrlLeft])), Match::Possible);
         assert_eq!(
@@ -469,8 +498,8 @@ mod hotkeys_test {
 
     #[test]
     fn incremental_with_multiple_hotkeys_when_no_match_is_found() {
-        let sut = Hotkeys::new(&Config {
-            mappings: vec![
+        let sut = Hotkeys::new(
+            vec![
                 Mapping {
                     on: vec![Key::CtrlLeft, Key::AltLeft, Key::A],
                     send: vec![Key::B],
@@ -488,8 +517,8 @@ mod hotkeys_test {
                     send: vec![Key::CtrlLeft, Key::V],
                 },
             ],
-            ..Default::default()
-        });
+            vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft],
+        );
 
         assert_eq!(sut.query(&KeySet::from([Key::CtrlLeft])), Match::Possible);
         assert_eq!(
