@@ -132,9 +132,10 @@ Check the documentation of the `interception-tools` for more details if you want
 ## TODO
 
 - notify interception maintainer of new plugin
-- add cli arguments and help output
 - allow to send multiple key combination
 - allow to trigger commands
 - vizualize state machine for documentation
-- add different modes to enable vim-like configurations
-- maybe publish current mode on DBus to enable plugins e.g. for waybar to show current mode
+- suppress all non-mapped keys (for vim mode)
+- disable depending on active window title
+- find better config format than json
+- publish current mode on DBus to enable plugins e.g. for waybar to show current mode
