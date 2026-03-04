@@ -1,0 +1,76 @@
+{
+    "modes": [
+        {
+            "name": "normal",
+            "mappings": [
+                {
+                    "on": [
+                        "i"
+                    ],
+                    "send": "insert"
+                },
+                {
+                    "on": [
+                        "j"
+                    ],
+                    "send": [
+                        "down"
+                    ]
+                },
+                {
+                    "on": [
+                        "k"
+                    ],
+                    "send": [
+                        "up"
+                    ]
+                },
+                {
+                    "on": [
+                        "h"
+                    ],
+                    "send": [
+                        "left"
+                    ]
+                },
+                {
+                    "on": [
+                        "l"
+                    ],
+                    "send": [
+                        "right"
+                    ]
+                },
+                {
+                    "on": [
+                        "b"
+                    ],
+                    "send": [
+                        "ctrl_left",
+                        "left"
+                    ]
+                },
+                {
+                    "on": [
+                        "w"
+                    ],
+                    "send": [
+                        "ctrl_left",
+                        "right"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "insert",
+            "mappings": [
+                {
+                    "on": [
+                        "esc"
+                    ],
+                    "send": "normal"
+                }
+            ]
+        }
+    ]
+}
