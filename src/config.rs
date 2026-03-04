@@ -44,5 +44,12 @@ fn default_modifiers() -> Vec<Key> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Mapping {
     pub on: Vec<Key>,
-    pub send: Vec<Key>,
+    pub send: Action,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Action {
+    KeyCombination(Vec<Key>),
+    ModeChange(String),
 }

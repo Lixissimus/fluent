@@ -16,6 +16,7 @@ pub mod keys;
 
 mod engine;
 mod event;
+mod hotkeys;
 
 pub fn run<I: Read, O: Write>(
     input: &mut I,
@@ -38,8 +39,14 @@ pub fn run<I: Read, O: Write>(
             continue;
         }
 
-        for output_event in engine.handle(evt) {
-            print_event(output, &output_event).context("could not send event")?;
+        for action in engine.handle(evt) {
+            match &action {
+                engine::Action::SendKeyEvent(input_events) => {
+                    for input_event in input_events {
+                        print_event(output, &input_event).context("could not send event")?;
+                    }
+                }
+            }
         }
     }
 }
