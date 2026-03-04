@@ -1,19 +1,116 @@
 use input_event_codes::{
-    KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_A, KEY_B,
-    KEY_BACKSPACE, KEY_C, KEY_CAPSLOCK, KEY_D, KEY_DELETE, KEY_DOWN, KEY_E, KEY_END, KEY_F, KEY_G,
-    KEY_H, KEY_HOME, KEY_I, KEY_J, KEY_K, KEY_KP0, KEY_KP1, KEY_KP2, KEY_KP3, KEY_KP4, KEY_KP5,
-    KEY_KP6, KEY_KP7, KEY_KP8, KEY_KP9, KEY_L, KEY_LEFT, KEY_LEFTALT, KEY_LEFTCTRL, KEY_LEFTSHIFT,
-    KEY_M, KEY_N, KEY_O, KEY_P, KEY_Q, KEY_R, KEY_RIGHT, KEY_RIGHTALT, KEY_RIGHTCTRL,
-    KEY_RIGHTSHIFT, KEY_S, KEY_SEMICOLON, KEY_T, KEY_U, KEY_UP, KEY_V, KEY_W, KEY_X, KEY_Y, KEY_Z,
-    SYN_REPORT,
+    KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_A, KEY_APOSTROPHE,
+    KEY_B, KEY_BACKSLASH, KEY_BACKSPACE, KEY_C, KEY_CAPSLOCK, KEY_COMMA, KEY_COMPOSE, KEY_D,
+    KEY_DELETE, KEY_DOT, KEY_DOWN, KEY_E, KEY_END, KEY_ENTER, KEY_EQUAL, KEY_ESC, KEY_F, KEY_F1,
+    KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12,
+    KEY_G, KEY_GRAVE, KEY_H, KEY_HOME, KEY_I, KEY_INSERT, KEY_J, KEY_K, KEY_KP0, KEY_KP1, KEY_KP2,
+    KEY_KP3, KEY_KP4, KEY_KP5, KEY_KP6, KEY_KP7, KEY_KP8, KEY_KP9, KEY_KPASTERISK, KEY_KPDOT,
+    KEY_KPENTER, KEY_KPMINUS, KEY_KPPLUS, KEY_KPSLASH, KEY_L, KEY_LEFT, KEY_LEFTALT, KEY_LEFTBRACE,
+    KEY_LEFTCTRL, KEY_LEFTMETA, KEY_LEFTSHIFT, KEY_M, KEY_MINUS, KEY_N, KEY_NUMLOCK, KEY_O, KEY_P,
+    KEY_PAGEDOWN, KEY_PAGEUP, KEY_PAUSE, KEY_PRINT, KEY_Q, KEY_R, KEY_RIGHT, KEY_RIGHTALT,
+    KEY_RIGHTBRACE, KEY_RIGHTCTRL, KEY_RIGHTMETA, KEY_RIGHTSHIFT, KEY_S, KEY_SCROLLLOCK,
+    KEY_SEMICOLON, KEY_SLASH, KEY_T, KEY_U, KEY_UP, KEY_V, KEY_W, KEY_X, KEY_Y, KEY_Z, SYN_REPORT,
 };
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Key {
+    // pseudo key for sending syn report events
     #[serde(skip)]
     SynReport,
+
+    Esc,
+
+    F1,
+    F2,
+    F3,
+    F4,
+    F5,
+    F6,
+    F7,
+    F8,
+    F9,
+    F10,
+    F11,
+    F12,
+
+    Print,
+    ScrollLock,
+    Pause,
+
+    #[serde(rename = "`")]
+    Backtick,
+
+    #[serde(rename = "0")]
+    Num0,
+    #[serde(rename = "1")]
+    Num1,
+    #[serde(rename = "2")]
+    Num2,
+    #[serde(rename = "3")]
+    Num3,
+    #[serde(rename = "4")]
+    Num4,
+    #[serde(rename = "5")]
+    Num5,
+    #[serde(rename = "6")]
+    Num6,
+    #[serde(rename = "7")]
+    Num7,
+    #[serde(rename = "8")]
+    Num8,
+    #[serde(rename = "9")]
+    Num9,
+
+    #[serde(rename = "-")]
+    Minus,
+    #[serde(rename = "=")]
+    Equal,
+    #[serde(rename = "[")]
+    LeftBrace,
+    #[serde(rename = "]")]
+    RightBrace,
+    #[serde(rename = ";")]
+    Semicolon,
+    #[serde(rename = "'")]
+    Apostrophe,
+    #[serde(rename = ",")]
+    Comma,
+    #[serde(rename = ".")]
+    Dot,
+    #[serde(rename = "/")]
+    Slash,
+    #[serde(rename = "\\")]
+    Backslash,
+
+    Backspace,
+    Enter,
+
+    Insert,
+    Delete,
+    Home,
+    End,
+    PageUp,
+    PageDown,
+
+    NumLock,
+    NumPadSlash,
+    NumPadAsterisk,
+    NumPadMinus,
+    NumPadPlus,
+    NumPadEnter,
+    NumPadDot,
+    NumPad0,
+    NumPad1,
+    NumPad2,
+    NumPad3,
+    NumPad4,
+    NumPad5,
+    NumPad6,
+    NumPad7,
+    NumPad8,
+    NumPad9,
 
     #[serde(rename = "down")]
     ArrowDown,
@@ -24,9 +121,6 @@ pub enum Key {
     #[serde(rename = "up")]
     ArrowUp,
 
-    Home,
-    End,
-
     Capslock,
 
     CtrlLeft,
@@ -35,6 +129,11 @@ pub enum Key {
     ShiftRight,
     AltLeft,
     AltRight,
+
+    MetaLeft,
+    MetaRight,
+
+    Compose,
 
     A,
     B,
@@ -63,121 +162,117 @@ pub enum Key {
     Y,
     Z,
 
-    #[serde(rename = "0")]
-    Num0,
-    #[serde(rename = "1")]
-    Num1,
-    #[serde(rename = "2")]
-    Num2,
-    #[serde(rename = "3")]
-    Num3,
-    #[serde(rename = "4")]
-    Num4,
-    #[serde(rename = "5")]
-    Num5,
-    #[serde(rename = "6")]
-    Num6,
-    #[serde(rename = "7")]
-    Num7,
-    #[serde(rename = "8")]
-    Num8,
-    #[serde(rename = "9")]
-    Num9,
-
-    NumPad0,
-    NumPad1,
-    NumPad2,
-    NumPad3,
-    NumPad4,
-    NumPad5,
-    NumPad6,
-    NumPad7,
-    NumPad8,
-    NumPad9,
-
-    #[serde(rename = ";")]
-    Semicolon,
-    Backspace,
-    Delete,
-
     Other(u16),
 }
 
 impl From<u16> for Key {
     fn from(value: u16) -> Self {
         match value {
-            SYN_REPORT!() => Self::SynReport,
+            SYN_REPORT!() => Key::SynReport,
+            KEY_DOWN!() => Key::ArrowDown,
+            KEY_LEFT!() => Key::ArrowLeft,
+            KEY_RIGHT!() => Key::ArrowRight,
+            KEY_UP!() => Key::ArrowUp,
+            KEY_HOME!() => Key::Home,
+            KEY_END!() => Key::End,
+            KEY_CAPSLOCK!() => Key::Capslock,
+            KEY_LEFTCTRL!() => Key::CtrlLeft,
+            KEY_RIGHTCTRL!() => Key::CtrlRight,
+            KEY_LEFTSHIFT!() => Key::ShiftLeft,
+            KEY_RIGHTSHIFT!() => Key::ShiftRight,
+            KEY_LEFTALT!() => Key::AltLeft,
+            KEY_RIGHTALT!() => Key::AltRight,
+            KEY_A!() => Key::A,
+            KEY_B!() => Key::B,
+            KEY_C!() => Key::C,
+            KEY_D!() => Key::D,
+            KEY_E!() => Key::E,
+            KEY_F!() => Key::F,
+            KEY_G!() => Key::G,
+            KEY_H!() => Key::H,
+            KEY_I!() => Key::I,
+            KEY_J!() => Key::J,
+            KEY_K!() => Key::K,
+            KEY_L!() => Key::L,
+            KEY_M!() => Key::M,
+            KEY_N!() => Key::N,
+            KEY_O!() => Key::O,
+            KEY_P!() => Key::P,
+            KEY_Q!() => Key::Q,
+            KEY_R!() => Key::R,
+            KEY_S!() => Key::S,
+            KEY_T!() => Key::T,
+            KEY_U!() => Key::U,
+            KEY_V!() => Key::V,
+            KEY_W!() => Key::W,
+            KEY_X!() => Key::X,
+            KEY_Y!() => Key::Y,
+            KEY_Z!() => Key::Z,
+            KEY_0!() => Key::Num0,
+            KEY_1!() => Key::Num1,
+            KEY_2!() => Key::Num2,
+            KEY_3!() => Key::Num3,
+            KEY_4!() => Key::Num4,
+            KEY_5!() => Key::Num5,
+            KEY_6!() => Key::Num6,
+            KEY_7!() => Key::Num7,
+            KEY_8!() => Key::Num8,
+            KEY_9!() => Key::Num9,
+            KEY_KP0!() => Key::NumPad0,
+            KEY_KP1!() => Key::NumPad1,
+            KEY_KP2!() => Key::NumPad2,
+            KEY_KP3!() => Key::NumPad3,
+            KEY_KP4!() => Key::NumPad4,
+            KEY_KP5!() => Key::NumPad5,
+            KEY_KP6!() => Key::NumPad6,
+            KEY_KP7!() => Key::NumPad7,
+            KEY_KP8!() => Key::NumPad8,
+            KEY_KP9!() => Key::NumPad9,
+            KEY_SEMICOLON!() => Key::Semicolon,
+            KEY_BACKSPACE!() => Key::Backspace,
+            KEY_DELETE!() => Key::Delete,
+            KEY_ESC!() => Key::Esc,
+            KEY_F1!() => Key::F1,
+            KEY_F2!() => Key::F2,
+            KEY_F3!() => Key::F3,
+            KEY_F4!() => Key::F4,
+            KEY_F5!() => Key::F5,
+            KEY_F6!() => Key::F6,
+            KEY_F7!() => Key::F7,
+            KEY_F8!() => Key::F8,
+            KEY_F9!() => Key::F9,
+            KEY_F10!() => Key::F10,
+            KEY_F11!() => Key::F11,
+            KEY_F12!() => Key::F12,
+            KEY_PRINT!() => Key::Print,
+            KEY_SCROLLLOCK!() => Key::ScrollLock,
+            KEY_PAUSE!() => Key::Pause,
+            KEY_GRAVE!() => Key::Backtick,
+            KEY_MINUS!() => Key::Minus,
+            KEY_EQUAL!() => Key::Equal,
+            KEY_LEFTBRACE!() => Key::LeftBrace,
+            KEY_RIGHTBRACE!() => Key::RightBrace,
+            KEY_APOSTROPHE!() => Key::Apostrophe,
+            KEY_COMMA!() => Key::Comma,
+            KEY_DOT!() => Key::Dot,
+            KEY_SLASH!() => Key::Slash,
+            KEY_BACKSLASH!() => Key::Backslash,
+            KEY_ENTER!() => Key::Enter,
+            KEY_INSERT!() => Key::Insert,
+            KEY_PAGEUP!() => Key::PageUp,
+            KEY_PAGEDOWN!() => Key::PageDown,
+            KEY_NUMLOCK!() => Key::NumLock,
+            KEY_KPSLASH!() => Key::NumPadSlash,
+            KEY_KPASTERISK!() => Key::NumPadAsterisk,
+            KEY_KPMINUS!() => Key::NumPadMinus,
+            KEY_KPPLUS!() => Key::NumPadPlus,
+            KEY_KPENTER!() => Key::NumPadEnter,
+            KEY_KPDOT!() => Key::NumPadDot,
+            KEY_LEFTMETA!() => Key::MetaLeft,
+            KEY_RIGHTMETA!() => Key::MetaRight,
+            KEY_COMPOSE!() => Key::Compose,
 
-            KEY_DOWN!() => Self::ArrowDown,
-            KEY_LEFT!() => Self::ArrowLeft,
-            KEY_RIGHT!() => Self::ArrowRight,
-            KEY_UP!() => Self::ArrowUp,
-
-            KEY_HOME!() => Self::Home,
-            KEY_END!() => Self::End,
-
-            KEY_CAPSLOCK!() => Self::Capslock,
-
-            KEY_LEFTCTRL!() => Self::CtrlLeft,
-            KEY_RIGHTCTRL!() => Self::CtrlRight,
-            KEY_LEFTSHIFT!() => Self::ShiftLeft,
-            KEY_RIGHTSHIFT!() => Self::ShiftRight,
-            KEY_LEFTALT!() => Self::AltLeft,
-            KEY_RIGHTALT!() => Self::AltRight,
-
-            KEY_A!() => Self::A,
-            KEY_B!() => Self::B,
-            KEY_C!() => Self::C,
-            KEY_D!() => Self::D,
-            KEY_E!() => Self::E,
-            KEY_F!() => Self::F,
-            KEY_G!() => Self::G,
-            KEY_H!() => Self::H,
-            KEY_I!() => Self::I,
-            KEY_J!() => Self::J,
-            KEY_K!() => Self::K,
-            KEY_L!() => Self::L,
-            KEY_M!() => Self::M,
-            KEY_N!() => Self::N,
-            KEY_O!() => Self::O,
-            KEY_P!() => Self::P,
-            KEY_Q!() => Self::Q,
-            KEY_R!() => Self::R,
-            KEY_S!() => Self::S,
-            KEY_T!() => Self::T,
-            KEY_U!() => Self::U,
-            KEY_V!() => Self::V,
-            KEY_W!() => Self::W,
-            KEY_X!() => Self::X,
-            KEY_Y!() => Self::Y,
-            KEY_Z!() => Self::Z,
-
-            KEY_0!() => Self::Num0,
-            KEY_1!() => Self::Num1,
-            KEY_2!() => Self::Num2,
-            KEY_3!() => Self::Num3,
-            KEY_4!() => Self::Num4,
-            KEY_5!() => Self::Num5,
-            KEY_6!() => Self::Num6,
-            KEY_7!() => Self::Num7,
-            KEY_8!() => Self::Num8,
-            KEY_9!() => Self::Num9,
-            KEY_KP0!() => Self::NumPad0,
-            KEY_KP1!() => Self::NumPad1,
-            KEY_KP2!() => Self::NumPad2,
-            KEY_KP3!() => Self::NumPad3,
-            KEY_KP4!() => Self::NumPad4,
-            KEY_KP5!() => Self::NumPad5,
-            KEY_KP6!() => Self::NumPad6,
-            KEY_KP7!() => Self::NumPad7,
-            KEY_KP8!() => Self::NumPad8,
-            KEY_KP9!() => Self::NumPad9,
-
-            KEY_SEMICOLON!() => Self::Semicolon,
-            KEY_BACKSPACE!() => Self::Backspace,
-            KEY_DELETE!() => Self::Delete,
-
-            code => Self::Other(code),
+            code => Key::Other(code),
         }
     }
 }
@@ -186,24 +281,19 @@ impl From<Key> for u16 {
     fn from(value: Key) -> Self {
         match value {
             Key::SynReport => SYN_REPORT!(),
-
             Key::ArrowDown => KEY_DOWN!(),
             Key::ArrowLeft => KEY_LEFT!(),
             Key::ArrowRight => KEY_RIGHT!(),
             Key::ArrowUp => KEY_UP!(),
-
             Key::Home => KEY_HOME!(),
             Key::End => KEY_END!(),
-
             Key::Capslock => KEY_CAPSLOCK!(),
-
             Key::CtrlLeft => KEY_LEFTCTRL!(),
             Key::CtrlRight => KEY_RIGHTCTRL!(),
             Key::ShiftLeft => KEY_LEFTSHIFT!(),
             Key::ShiftRight => KEY_RIGHTSHIFT!(),
             Key::AltLeft => KEY_LEFTALT!(),
             Key::AltRight => KEY_RIGHTALT!(),
-
             Key::A => KEY_A!(),
             Key::B => KEY_B!(),
             Key::C => KEY_C!(),
@@ -250,10 +340,49 @@ impl From<Key> for u16 {
             Key::NumPad7 => KEY_KP7!(),
             Key::NumPad8 => KEY_KP8!(),
             Key::NumPad9 => KEY_KP9!(),
-
             Key::Semicolon => KEY_SEMICOLON!(),
             Key::Backspace => KEY_BACKSPACE!(),
             Key::Delete => KEY_DELETE!(),
+            Key::Esc => KEY_ESC!(),
+            Key::F1 => KEY_F1!(),
+            Key::F2 => KEY_F2!(),
+            Key::F3 => KEY_F3!(),
+            Key::F4 => KEY_F4!(),
+            Key::F5 => KEY_F5!(),
+            Key::F6 => KEY_F6!(),
+            Key::F7 => KEY_F7!(),
+            Key::F8 => KEY_F8!(),
+            Key::F9 => KEY_F9!(),
+            Key::F10 => KEY_F10!(),
+            Key::F11 => KEY_F11!(),
+            Key::F12 => KEY_F12!(),
+            Key::Print => KEY_PRINT!(),
+            Key::ScrollLock => KEY_SCROLLLOCK!(),
+            Key::Pause => KEY_PAUSE!(),
+            Key::Backtick => KEY_GRAVE!(),
+            Key::Minus => KEY_MINUS!(),
+            Key::Equal => KEY_EQUAL!(),
+            Key::LeftBrace => KEY_LEFTBRACE!(),
+            Key::RightBrace => KEY_RIGHTBRACE!(),
+            Key::Apostrophe => KEY_APOSTROPHE!(),
+            Key::Comma => KEY_COMMA!(),
+            Key::Dot => KEY_DOT!(),
+            Key::Slash => KEY_SLASH!(),
+            Key::Backslash => KEY_BACKSLASH!(),
+            Key::Enter => KEY_ENTER!(),
+            Key::Insert => KEY_INSERT!(),
+            Key::PageUp => KEY_PAGEUP!(),
+            Key::PageDown => KEY_PAGEDOWN!(),
+            Key::NumLock => KEY_NUMLOCK!(),
+            Key::NumPadSlash => KEY_KPSLASH!(),
+            Key::NumPadAsterisk => KEY_KPASTERISK!(),
+            Key::NumPadMinus => KEY_KPMINUS!(),
+            Key::NumPadPlus => KEY_KPPLUS!(),
+            Key::NumPadEnter => KEY_KPENTER!(),
+            Key::NumPadDot => KEY_KPDOT!(),
+            Key::MetaLeft => KEY_LEFTMETA!(),
+            Key::MetaRight => KEY_RIGHTMETA!(),
+            Key::Compose => KEY_COMPOSE!(),
 
             Key::Other(code) => code,
         }
