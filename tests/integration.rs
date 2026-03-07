@@ -1,5 +1,5 @@
 use fluent::{
-    config::{Action, Config, Mapping, Mode},
+    config::{Action, Config, Hotkey, Mode},
     keys::Key,
 };
 use input_event_codes::{
@@ -23,7 +23,7 @@ fn pass_through_unmapped_key_events() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::CtrlLeft, Key::A],
                     send: Action::KeyCombination(vec![Key::B]),
                 }],
@@ -55,7 +55,7 @@ fn remap_single_key_events() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::A],
                     send: Action::KeyCombination(vec![Key::B]),
                 }],
@@ -88,7 +88,7 @@ fn press_and_release_once_with_single_modifier() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::CtrlLeft, Key::A],
                     send: Action::KeyCombination(vec![Key::B]),
                 }],
@@ -119,7 +119,7 @@ fn press_and_release_modifier_first_once_with_single_modifier() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::CtrlLeft, Key::A],
                     send: Action::KeyCombination(vec![Key::B]),
                 }],
@@ -152,7 +152,7 @@ fn press_repeat_and_release_with_single_modifier() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::CtrlLeft, Key::A],
                     send: Action::KeyCombination(vec![Key::B]),
                 }],
@@ -189,7 +189,7 @@ fn press_repeat_and_release_modifier_first_with_single_modifier() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::CtrlLeft, Key::A],
                     send: Action::KeyCombination(vec![Key::AltLeft, Key::B]),
                 }],
@@ -230,7 +230,7 @@ fn press_and_release_twice_with_single_modifier() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::CtrlLeft, Key::A],
                     send: Action::KeyCombination(vec![Key::B]),
                 }],
@@ -265,7 +265,7 @@ fn release_multiple_hotkeys_in_reverse_order() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::CtrlLeft, Key::A],
                     send: Action::KeyCombination(vec![Key::AltLeft, Key::B]),
                 }],
@@ -300,7 +300,7 @@ fn send_collected_keys_once_match_is_impossible() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                     send: Action::KeyCombination(vec![Key::B]),
                 }],
@@ -338,12 +338,12 @@ fn trigger_hotkey_in_multiple_attempts() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![
-                    Mapping {
+                hotkeys: vec![
+                    Hotkey {
                         on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                         send: Action::KeyCombination(vec![Key::AltLeft, Key::B]),
                     },
-                    Mapping {
+                    Hotkey {
                         on: vec![Key::CtrlLeft, Key::X],
                         send: Action::KeyCombination(vec![Key::Y]),
                     },
@@ -378,7 +378,7 @@ fn trigger_hotkey_after_unhandled_key_combination() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::CtrlLeft, Key::X],
                     send: Action::KeyCombination(vec![Key::Y]),
                 }],
@@ -417,7 +417,7 @@ fn simple_handled_modifer_press_repeat_and_release() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::CtrlLeft, Key::X],
                     send: Action::KeyCombination(vec![Key::Y]),
                 }],
@@ -444,7 +444,7 @@ fn simple_unhandled_modifer_press_repeat_and_release_drops_repeat() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::AltLeft, Key::X],
                     send: Action::KeyCombination(vec![Key::Y]),
                 }],
@@ -475,7 +475,7 @@ fn unhandled_combination_is_forwarded() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::AltLeft, Key::X],
                     send: Action::KeyCombination(vec![Key::Y]),
                 }],
@@ -511,7 +511,7 @@ fn regular_key_can_become_modifier() {
         &mut output,
         &Config {
             modes: vec![Mode {
-                mappings: vec![Mapping {
+                hotkeys: vec![Hotkey {
                     on: vec![Key::A, Key::X],
                     send: Action::KeyCombination(vec![Key::Y]),
                 }],

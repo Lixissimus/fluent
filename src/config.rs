@@ -13,7 +13,7 @@ pub struct Mode {
     pub name: String,
     #[serde(default = "default_modifiers")]
     pub modifiers: Vec<Key>,
-    pub mappings: Vec<Mapping>,
+    pub hotkeys: Vec<Hotkey>,
 }
 
 impl Default for Mode {
@@ -21,7 +21,7 @@ impl Default for Mode {
         Self {
             name: default_mode_name(),
             modifiers: default_modifiers(),
-            mappings: Default::default(),
+            hotkeys: Default::default(),
         }
     }
 }
@@ -42,7 +42,7 @@ fn default_modifiers() -> Vec<Key> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Mapping {
+pub struct Hotkey {
     pub on: Vec<Key>,
     pub send: Action,
 }

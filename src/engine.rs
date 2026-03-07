@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    config::Config,
+    config::{self, Config},
     event::{InputEvent, KeyValue},
     hotkeys::{Hotkeys, KeySet, Match},
     keys::Key,
@@ -20,7 +20,7 @@ pub struct Engine {
 enum State {
     Idle,
     PartialHotkey,
-    CompleteHotkey(crate::config::Action),
+    CompleteHotkey(config::Action),
 }
 
 #[derive(Debug)]
@@ -44,7 +44,7 @@ impl Engine {
                 .map(|mode| {
                     (
                         mode.name.clone(),
-                        Hotkeys::new(mode.mappings.clone(), mode.modifiers.clone()),
+                        Hotkeys::new(mode.hotkeys.clone(), mode.modifiers.clone()),
                     )
                 })
                 .collect(),
@@ -91,7 +91,7 @@ impl Engine {
                 {
                     Match::Impossible => KeyEvent::Press(Match::Impossible),
                     Match::Possible => KeyEvent::Press(Match::Possible),
-                    Match::Complete(trigger_keys) => KeyEvent::Press(Match::Complete(trigger_keys)),
+                    Match::Complete(action) => KeyEvent::Press(Match::Complete(action)),
                 }
             }
             KeyValue::Repeat => KeyEvent::Repeat,
@@ -116,10 +116,10 @@ impl Engine {
                     &self.previously_pressed,
                 ))];
                 match &action {
-                    crate::config::Action::KeyCombination(keys) => {
+                    config::Action::KeyCombination(keys) => {
                         send_actions.push(Action::SendKeyEvent(key_press_sequence(&keys)));
                     }
-                    crate::config::Action::ModeChange(mode) => {
+                    config::Action::ModeChange(mode) => {
                         eprintln!("mode: {mode}");
                         self.mode = mode.clone()
                     }
@@ -149,10 +149,10 @@ impl Engine {
             }
             (State::PartialHotkey, KeyEvent::Press(Match::Complete(action))) => {
                 let send_actions = match &action {
-                    crate::config::Action::KeyCombination(keys) => {
+                    config::Action::KeyCombination(keys) => {
                         vec![Action::SendKeyEvent(key_press_sequence(&keys))]
                     }
-                    crate::config::Action::ModeChange(_) => vec![],
+                    config::Action::ModeChange(_) => vec![],
                 };
 
                 (State::CompleteHotkey(action), send_actions)
@@ -171,7 +171,7 @@ impl Engine {
             }
             (State::CompleteHotkey(action), KeyEvent::Repeat) => {
                 let send_actions = match action {
-                    crate::config::Action::KeyCombination(keys) => {
+                    config::Action::KeyCombination(keys) => {
                         vec![Action::SendKeyEvent(key_repeat_sequence(
                             &keys
                                 .iter()
@@ -180,17 +180,17 @@ impl Engine {
                                 .collect(),
                         ))]
                     }
-                    crate::config::Action::ModeChange(_) => vec![],
+                    config::Action::ModeChange(_) => vec![],
                 };
 
                 (State::CompleteHotkey(action.clone()), send_actions)
             }
             (State::CompleteHotkey(action), KeyEvent::Release) => {
                 let send_actions = match action {
-                    crate::config::Action::KeyCombination(keys) => {
+                    config::Action::KeyCombination(keys) => {
                         vec![Action::SendKeyEvent(key_release_sequence(&keys))]
                     }
-                    crate::config::Action::ModeChange(_) => vec![],
+                    config::Action::ModeChange(_) => vec![],
                 };
 
                 if self.now_pressed.is_empty() {

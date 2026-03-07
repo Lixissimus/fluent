@@ -1,13 +1,12 @@
 use std::collections::{BTreeSet, HashMap};
 
 use crate::{
-    config::{Action, Mapping},
-    keys::Key,
+    config, keys::Key
 };
 
 #[derive(Default)]
 pub struct Hotkeys {
-    mappings: HashMap<KeySet, Action>,
+    mappings: HashMap<KeySet, config::Action>,
     modifiers: Vec<Key>,
 }
 
@@ -17,11 +16,11 @@ pub type KeySet = BTreeSet<Key>;
 pub enum Match {
     Impossible,
     Possible,
-    Complete(Action),
+    Complete(config::Action),
 }
 
 impl Hotkeys {
-    pub fn new(mappings: Vec<Mapping>, modifiers: Vec<Key>) -> Self {
+    pub fn new(mappings: Vec<config::Hotkey>, modifiers: Vec<Key>) -> Self {
         Self {
             mappings: mappings
                 .into_iter()
@@ -50,7 +49,7 @@ impl Hotkeys {
 #[cfg(test)]
 mod test {
     use crate::{
-        config::{Action, Mapping},
+        config::{Action, Hotkey},
         hotkeys::{Hotkeys, KeySet, Match},
         keys::Key,
     };
@@ -85,7 +84,7 @@ mod test {
     #[test]
     fn match_impossible_when_uncofigured_combination_pressed() {
         let sut = Hotkeys::new(
-            vec![Mapping {
+            vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                 send: Action::KeyCombination(vec![Key::B]),
             }],
@@ -100,7 +99,7 @@ mod test {
     #[test]
     fn match_impossible_when_non_modifier_pressed_and_not_complete() {
         let sut = Hotkeys::new(
-            vec![Mapping {
+            vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                 send: Action::KeyCombination(vec![Key::B]),
             }],
@@ -115,7 +114,7 @@ mod test {
     #[test]
     fn match_impossible_when_wrong_modifier_pressed() {
         let sut = Hotkeys::new(
-            vec![Mapping {
+            vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                 send: Action::KeyCombination(vec![Key::B]),
             }],
@@ -130,7 +129,7 @@ mod test {
     #[test]
     fn match_impossible_when_modifier_pressed_but_none_is_configured() {
         let sut = Hotkeys::new(
-            vec![Mapping {
+            vec![Hotkey {
                 on: vec![Key::A],
                 send: Action::KeyCombination(vec![Key::B]),
             }],
@@ -145,7 +144,7 @@ mod test {
     #[test]
     fn match_possible_when_nothing_is_pressed() {
         let sut = Hotkeys::new(
-            vec![Mapping {
+            vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: Action::KeyCombination(vec![Key::B]),
             }],
@@ -160,7 +159,7 @@ mod test {
     #[test]
     fn match_possible_when_single_matching_modifier_is_pressed() {
         let sut = Hotkeys::new(
-            vec![Mapping {
+            vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: Action::KeyCombination(vec![Key::B]),
             }],
@@ -175,7 +174,7 @@ mod test {
     #[test]
     fn match_possible_when_one_of_multiple_matching_modifiers_are_pressed() {
         let sut = Hotkeys::new(
-            vec![Mapping {
+            vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
                 send: Action::KeyCombination(vec![Key::B]),
             }],
@@ -190,7 +189,7 @@ mod test {
     #[test]
     fn match_possible_when_some_of_multiple_matching_modifiers_are_pressed() {
         let sut = Hotkeys::new(
-            vec![Mapping {
+            vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
                 send: Action::KeyCombination(vec![Key::B]),
             }],
@@ -205,7 +204,7 @@ mod test {
     #[test]
     fn match_possible_when_all_of_multiple_matching_modifiers_are_pressed() {
         let sut = Hotkeys::new(
-            vec![Mapping {
+            vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
                 send: Action::KeyCombination(vec![Key::B]),
             }],
@@ -220,7 +219,7 @@ mod test {
     #[test]
     fn match_complete_when_no_modifier_configured() {
         let sut = Hotkeys::new(
-            vec![Mapping {
+            vec![Hotkey {
                 on: vec![Key::A],
                 send: Action::KeyCombination(vec![Key::B]),
             }],
@@ -238,7 +237,7 @@ mod test {
     #[test]
     fn match_complete_with_single_modifier() {
         let sut = Hotkeys::new(
-            vec![Mapping {
+            vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::A],
                 send: Action::KeyCombination(vec![Key::B]),
             }],
@@ -256,7 +255,7 @@ mod test {
     #[test]
     fn match_complete_with_multiple_modifiers() {
         let sut = Hotkeys::new(
-            vec![Mapping {
+            vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::AltLeft, Key::A],
                 send: Action::KeyCombination(vec![Key::B]),
             }],
@@ -275,19 +274,19 @@ mod test {
     fn incremental_with_multiple_hotkeys_when_match_is_found() {
         let sut = Hotkeys::new(
             vec![
-                Mapping {
+                Hotkey {
                     on: vec![Key::CtrlLeft, Key::AltLeft, Key::A],
                     send: Action::KeyCombination(vec![Key::B]),
                 },
-                Mapping {
+                Hotkey {
                     on: vec![Key::D],
                     send: Action::KeyCombination(vec![Key::E]),
                 },
-                Mapping {
+                Hotkey {
                     on: vec![Key::AltLeft, Key::K],
                     send: Action::KeyCombination(vec![Key::CtrlLeft, Key::K]),
                 },
-                Mapping {
+                Hotkey {
                     on: vec![Key::CtrlLeft, Key::AltLeft, Key::C],
                     send: Action::KeyCombination(vec![Key::CtrlLeft, Key::V]),
                 },
@@ -310,19 +309,19 @@ mod test {
     fn incremental_with_multiple_hotkeys_when_no_match_is_found() {
         let sut = Hotkeys::new(
             vec![
-                Mapping {
+                Hotkey {
                     on: vec![Key::CtrlLeft, Key::AltLeft, Key::A],
                     send: Action::KeyCombination(vec![Key::B]),
                 },
-                Mapping {
+                Hotkey {
                     on: vec![Key::D],
                     send: Action::KeyCombination(vec![Key::E]),
                 },
-                Mapping {
+                Hotkey {
                     on: vec![Key::ShiftLeft, Key::K],
                     send: Action::KeyCombination(vec![Key::CtrlLeft, Key::K]),
                 },
-                Mapping {
+                Hotkey {
                     on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::C],
                     send: Action::KeyCombination(vec![Key::CtrlLeft, Key::V]),
                 },
