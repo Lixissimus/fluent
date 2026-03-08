@@ -2,18 +2,18 @@
     "modes": [
         {
             "name": "normal",
-            "mappings": [
+            "hotkeys": [
                 {
                     "on": [
                         "i"
                     ],
-                    "send": "insert"
+                    "action": "insert"
                 },
                 {
                     "on": [
                         "j"
                     ],
-                    "send": [
+                    "action": [
                         "down"
                     ]
                 },
@@ -21,7 +21,7 @@
                     "on": [
                         "k"
                     ],
-                    "send": [
+                    "action": [
                         "up"
                     ]
                 },
@@ -29,7 +29,7 @@
                     "on": [
                         "h"
                     ],
-                    "send": [
+                    "action": [
                         "left"
                     ]
                 },
@@ -37,7 +37,7 @@
                     "on": [
                         "l"
                     ],
-                    "send": [
+                    "action": [
                         "right"
                     ]
                 },
@@ -45,7 +45,7 @@
                     "on": [
                         "b"
                     ],
-                    "send": [
+                    "action": [
                         "ctrl_left",
                         "left"
                     ]
@@ -54,7 +54,7 @@
                     "on": [
                         "w"
                     ],
-                    "send": [
+                    "action": [
                         "ctrl_left",
                         "right"
                     ]
@@ -63,12 +63,12 @@
         },
         {
             "name": "insert",
-            "mappings": [
+            "hotkeys": [
                 {
                     "on": [
                         "esc"
                     ],
-                    "send": "normal"
+                    "action": "normal"
                 }
             ]
         }
