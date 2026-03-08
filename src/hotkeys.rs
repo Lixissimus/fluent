@@ -24,16 +24,16 @@ impl Hotkeys {
         Self {
             mappings: mappings
                 .into_iter()
-                .map(|m| (KeySet::from_iter(m.on), m.send))
+                .map(|m| (KeySet::from_iter(m.on), m.action))
                 .collect(),
             modifiers,
         }
     }
 
     pub fn query(&self, combination: &KeySet) -> Match {
-        for (trigger, send) in &self.mappings {
+        for (trigger, action) in &self.mappings {
             if trigger == combination {
-                return Match::Complete(send.clone());
+                return Match::Complete(action.clone());
             }
             // match is only still possible if there are only modifers pressed yet, otherwise it must be complete
             if trigger.is_superset(combination)
@@ -86,7 +86,7 @@ mod test {
         let sut = Hotkeys::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
-                send: Action::KeyCombination(vec![Key::B]),
+                action: Action::KeyCombination(vec![Key::B]),
             }],
             vec![],
         );
@@ -101,7 +101,7 @@ mod test {
         let sut = Hotkeys::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
-                send: Action::KeyCombination(vec![Key::B]),
+                action: Action::KeyCombination(vec![Key::B]),
             }],
             vec![],
         );
@@ -116,7 +116,7 @@ mod test {
         let sut = Hotkeys::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
-                send: Action::KeyCombination(vec![Key::B]),
+                action: Action::KeyCombination(vec![Key::B]),
             }],
             vec![],
         );
@@ -131,7 +131,7 @@ mod test {
         let sut = Hotkeys::new(
             vec![Hotkey {
                 on: vec![Key::A],
-                send: Action::KeyCombination(vec![Key::B]),
+                action: Action::KeyCombination(vec![Key::B]),
             }],
             vec![],
         );
@@ -146,7 +146,7 @@ mod test {
         let sut = Hotkeys::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::A],
-                send: Action::KeyCombination(vec![Key::B]),
+                action: Action::KeyCombination(vec![Key::B]),
             }],
             vec![],
         );
@@ -161,7 +161,7 @@ mod test {
         let sut = Hotkeys::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::A],
-                send: Action::KeyCombination(vec![Key::B]),
+                action: Action::KeyCombination(vec![Key::B]),
             }],
             vec![Key::CtrlLeft],
         );
@@ -176,7 +176,7 @@ mod test {
         let sut = Hotkeys::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
-                send: Action::KeyCombination(vec![Key::B]),
+                action: Action::KeyCombination(vec![Key::B]),
             }],
             vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft],
         );
@@ -191,7 +191,7 @@ mod test {
         let sut = Hotkeys::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
-                send: Action::KeyCombination(vec![Key::B]),
+                action: Action::KeyCombination(vec![Key::B]),
             }],
             vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft],
         );
@@ -206,7 +206,7 @@ mod test {
         let sut = Hotkeys::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
-                send: Action::KeyCombination(vec![Key::B]),
+                action: Action::KeyCombination(vec![Key::B]),
             }],
             vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft],
         );
@@ -221,7 +221,7 @@ mod test {
         let sut = Hotkeys::new(
             vec![Hotkey {
                 on: vec![Key::A],
-                send: Action::KeyCombination(vec![Key::B]),
+                action: Action::KeyCombination(vec![Key::B]),
             }],
             vec![Key::CtrlLeft],
         );
@@ -239,7 +239,7 @@ mod test {
         let sut = Hotkeys::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::A],
-                send: Action::KeyCombination(vec![Key::B]),
+                action: Action::KeyCombination(vec![Key::B]),
             }],
             vec![Key::CtrlLeft],
         );
@@ -257,7 +257,7 @@ mod test {
         let sut = Hotkeys::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::AltLeft, Key::A],
-                send: Action::KeyCombination(vec![Key::B]),
+                action: Action::KeyCombination(vec![Key::B]),
             }],
             vec![Key::CtrlLeft, Key::AltLeft],
         );
@@ -276,19 +276,19 @@ mod test {
             vec![
                 Hotkey {
                     on: vec![Key::CtrlLeft, Key::AltLeft, Key::A],
-                    send: Action::KeyCombination(vec![Key::B]),
+                    action: Action::KeyCombination(vec![Key::B]),
                 },
                 Hotkey {
                     on: vec![Key::D],
-                    send: Action::KeyCombination(vec![Key::E]),
+                    action: Action::KeyCombination(vec![Key::E]),
                 },
                 Hotkey {
                     on: vec![Key::AltLeft, Key::K],
-                    send: Action::KeyCombination(vec![Key::CtrlLeft, Key::K]),
+                    action: Action::KeyCombination(vec![Key::CtrlLeft, Key::K]),
                 },
                 Hotkey {
                     on: vec![Key::CtrlLeft, Key::AltLeft, Key::C],
-                    send: Action::KeyCombination(vec![Key::CtrlLeft, Key::V]),
+                    action: Action::KeyCombination(vec![Key::CtrlLeft, Key::V]),
                 },
             ],
             vec![Key::CtrlLeft, Key::AltLeft],
@@ -311,19 +311,19 @@ mod test {
             vec![
                 Hotkey {
                     on: vec![Key::CtrlLeft, Key::AltLeft, Key::A],
-                    send: Action::KeyCombination(vec![Key::B]),
+                    action: Action::KeyCombination(vec![Key::B]),
                 },
                 Hotkey {
                     on: vec![Key::D],
-                    send: Action::KeyCombination(vec![Key::E]),
+                    action: Action::KeyCombination(vec![Key::E]),
                 },
                 Hotkey {
                     on: vec![Key::ShiftLeft, Key::K],
-                    send: Action::KeyCombination(vec![Key::CtrlLeft, Key::K]),
+                    action: Action::KeyCombination(vec![Key::CtrlLeft, Key::K]),
                 },
                 Hotkey {
                     on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::C],
-                    send: Action::KeyCombination(vec![Key::CtrlLeft, Key::V]),
+                    action: Action::KeyCombination(vec![Key::CtrlLeft, Key::V]),
                 },
             ],
             vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft],

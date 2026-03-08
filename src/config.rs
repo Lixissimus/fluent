@@ -44,7 +44,7 @@ fn default_modifiers() -> Vec<Key> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Hotkey {
     pub on: Vec<Key>,
-    pub send: Action,
+    pub action: Action,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
