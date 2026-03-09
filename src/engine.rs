@@ -3,15 +3,14 @@ use std::collections::HashMap;
 use crate::{
     config::{self, Config},
     event::{InputEvent, KeyValue},
-    hotkeys::{Hotkeys, KeySet, Match},
+    hotkeys::{HotkeyStore, KeySet, Match},
     keys::Key,
 };
 
 pub struct Engine {
-    hotkeys: HashMap<String, Hotkeys>,
-    modifiers: HashMap<String, Vec<Key>>,
-    state: State,
-    mode: String,
+    hotkeys_by_mode: HashMap<String, HotkeyStore>,
+    current_state: State,
+    current_mode: String,
     previously_pressed: Vec<Key>,
     now_pressed: Vec<Key>,
 }
@@ -38,23 +37,18 @@ pub enum Action {
 impl Engine {
     pub fn new(config: &Config) -> Self {
         Self {
-            hotkeys: config
+            hotkeys_by_mode: config
                 .modes
                 .iter()
                 .map(|mode| {
                     (
                         mode.name.clone(),
-                        Hotkeys::new(mode.hotkeys.clone(), mode.modifiers.clone()),
+                        HotkeyStore::new(mode.hotkeys.clone(), mode.modifiers.clone()),
                     )
                 })
                 .collect(),
-            modifiers: config
-                .modes
-                .iter()
-                .map(|mode| (mode.name.clone(), mode.modifiers.clone()))
-                .collect(),
-            state: State::Idle,
-            mode: config
+            current_state: State::Idle,
+            current_mode: config
                 .modes
                 .first()
                 .and_then(|mode| Some(mode.name.clone()))
@@ -67,7 +61,7 @@ impl Engine {
     pub fn handle(&mut self, event: InputEvent) -> Vec<Action> {
         let trigger = self.handle_input(&event);
         let (new_state, output) = self.state_transition(event.code, trigger);
-        self.state = new_state;
+        self.current_state = new_state;
         output
     }
 
@@ -82,10 +76,10 @@ impl Engine {
                 self.previously_pressed = self.now_pressed.clone();
                 self.now_pressed.push(event.code);
                 match self
-                    .hotkeys
-                    .get(&self.mode)
-                    .and_then(|hotkey| {
-                        Some(hotkey.query(&KeySet::from_iter(self.now_pressed.clone())))
+                    .hotkeys_by_mode
+                    .get(&self.current_mode)
+                    .and_then(|hotkeys| {
+                        Some(hotkeys.query(&KeySet::from_iter(self.now_pressed.clone())))
                     })
                     .unwrap_or(Match::Impossible)
                 {
@@ -100,7 +94,7 @@ impl Engine {
     }
 
     fn state_transition(&mut self, key: Key, trigger: KeyEvent) -> (State, Vec<Action>) {
-        match (&self.state, trigger) {
+        match (&self.current_state, trigger) {
             (State::Idle, KeyEvent::Press(Match::Impossible)) => (
                 State::Idle,
                 vec![Action::SendKeyEvent(key_press_sequence(&vec![key]))],
@@ -121,7 +115,7 @@ impl Engine {
                     }
                     config::Action::ModeChange(mode) => {
                         eprintln!("mode: {mode}");
-                        self.mode = mode.clone()
+                        self.current_mode = mode.clone()
                     }
                 }
 
@@ -205,9 +199,9 @@ impl Engine {
     }
 
     fn is_modifier(&self, key: Key) -> bool {
-        self.modifiers
-            .get(&self.mode)
-            .and_then(|modifiers| Some(modifiers.contains(&key)))
+        self.hotkeys_by_mode
+            .get(&self.current_mode)
+            .and_then(|hotkeys| Some(hotkeys.is_modifier(key)))
             .unwrap_or(false)
     }
 }

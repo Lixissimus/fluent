@@ -1,12 +1,10 @@
 use std::collections::{BTreeSet, HashMap};
 
-use crate::{
-    config, keys::Key
-};
+use crate::{config, keys::Key};
 
 #[derive(Default)]
-pub struct Hotkeys {
-    mappings: HashMap<KeySet, config::Action>,
+pub struct HotkeyStore {
+    hotkeys: HashMap<KeySet, config::Action>,
     modifiers: Vec<Key>,
 }
 
@@ -19,10 +17,10 @@ pub enum Match {
     Complete(config::Action),
 }
 
-impl Hotkeys {
-    pub fn new(mappings: Vec<config::Hotkey>, modifiers: Vec<Key>) -> Self {
+impl HotkeyStore {
+    pub fn new(hotkeys: Vec<config::Hotkey>, modifiers: Vec<Key>) -> Self {
         Self {
-            mappings: mappings
+            hotkeys: hotkeys
                 .into_iter()
                 .map(|m| (KeySet::from_iter(m.on), m.action))
                 .collect(),
@@ -30,19 +28,21 @@ impl Hotkeys {
         }
     }
 
-    pub fn query(&self, combination: &KeySet) -> Match {
-        for (trigger, action) in &self.mappings {
-            if trigger == combination {
+    pub fn query(&self, chord: &KeySet) -> Match {
+        for (trigger, action) in &self.hotkeys {
+            if trigger == chord {
                 return Match::Complete(action.clone());
             }
             // match is only still possible if there are only modifers pressed yet, otherwise it must be complete
-            if trigger.is_superset(combination)
-                && combination.iter().all(|key| self.modifiers.contains(key))
-            {
+            if trigger.is_superset(chord) && chord.iter().all(|key| self.modifiers.contains(key)) {
                 return Match::Possible;
             }
         }
         Match::Impossible
+    }
+
+    pub fn is_modifier(&self, key: Key) -> bool {
+        self.modifiers.contains(&key)
     }
 }
 
@@ -50,13 +50,13 @@ impl Hotkeys {
 mod test {
     use crate::{
         config::{Action, Hotkey},
-        hotkeys::{Hotkeys, KeySet, Match},
+        hotkeys::{HotkeyStore, KeySet, Match},
         keys::Key,
     };
 
     #[test]
     fn match_impossible_with_empty_config_when_modifier_is_pressed() {
-        let sut = Hotkeys::new(vec![], vec![]);
+        let sut = HotkeyStore::new(vec![], vec![]);
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft]));
 
@@ -65,7 +65,7 @@ mod test {
 
     #[test]
     fn match_impossible_with_empty_config_when_non_modifier_is_pressed() {
-        let sut = Hotkeys::new(vec![], vec![]);
+        let sut = HotkeyStore::new(vec![], vec![]);
 
         let result = sut.query(&KeySet::from([Key::A]));
 
@@ -74,7 +74,7 @@ mod test {
 
     #[test]
     fn match_impossible_with_empty_config_when_nothing_is_pressed() {
-        let sut = Hotkeys::new(vec![], vec![]);
+        let sut = HotkeyStore::new(vec![], vec![]);
 
         let result = sut.query(&KeySet::from([]));
 
@@ -83,7 +83,7 @@ mod test {
 
     #[test]
     fn match_impossible_when_uncofigured_combination_pressed() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                 action: Action::KeyCombination(vec![Key::B]),
@@ -98,7 +98,7 @@ mod test {
 
     #[test]
     fn match_impossible_when_non_modifier_pressed_and_not_complete() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                 action: Action::KeyCombination(vec![Key::B]),
@@ -113,7 +113,7 @@ mod test {
 
     #[test]
     fn match_impossible_when_wrong_modifier_pressed() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::A],
                 action: Action::KeyCombination(vec![Key::B]),
@@ -128,7 +128,7 @@ mod test {
 
     #[test]
     fn match_impossible_when_modifier_pressed_but_none_is_configured() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![Hotkey {
                 on: vec![Key::A],
                 action: Action::KeyCombination(vec![Key::B]),
@@ -143,7 +143,7 @@ mod test {
 
     #[test]
     fn match_possible_when_nothing_is_pressed() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::A],
                 action: Action::KeyCombination(vec![Key::B]),
@@ -158,7 +158,7 @@ mod test {
 
     #[test]
     fn match_possible_when_single_matching_modifier_is_pressed() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::A],
                 action: Action::KeyCombination(vec![Key::B]),
@@ -173,7 +173,7 @@ mod test {
 
     #[test]
     fn match_possible_when_one_of_multiple_matching_modifiers_are_pressed() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
                 action: Action::KeyCombination(vec![Key::B]),
@@ -188,7 +188,7 @@ mod test {
 
     #[test]
     fn match_possible_when_some_of_multiple_matching_modifiers_are_pressed() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
                 action: Action::KeyCombination(vec![Key::B]),
@@ -203,7 +203,7 @@ mod test {
 
     #[test]
     fn match_possible_when_all_of_multiple_matching_modifiers_are_pressed() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::ShiftLeft, Key::AltLeft, Key::A],
                 action: Action::KeyCombination(vec![Key::B]),
@@ -218,7 +218,7 @@ mod test {
 
     #[test]
     fn match_complete_when_no_modifier_configured() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![Hotkey {
                 on: vec![Key::A],
                 action: Action::KeyCombination(vec![Key::B]),
@@ -236,7 +236,7 @@ mod test {
 
     #[test]
     fn match_complete_with_single_modifier() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::A],
                 action: Action::KeyCombination(vec![Key::B]),
@@ -254,7 +254,7 @@ mod test {
 
     #[test]
     fn match_complete_with_multiple_modifiers() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![Hotkey {
                 on: vec![Key::CtrlLeft, Key::AltLeft, Key::A],
                 action: Action::KeyCombination(vec![Key::B]),
@@ -272,7 +272,7 @@ mod test {
 
     #[test]
     fn incremental_with_multiple_hotkeys_when_match_is_found() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![
                 Hotkey {
                     on: vec![Key::CtrlLeft, Key::AltLeft, Key::A],
@@ -307,7 +307,7 @@ mod test {
 
     #[test]
     fn incremental_with_multiple_hotkeys_when_no_match_is_found() {
-        let sut = Hotkeys::new(
+        let sut = HotkeyStore::new(
             vec![
                 Hotkey {
                     on: vec![Key::CtrlLeft, Key::AltLeft, Key::A],
