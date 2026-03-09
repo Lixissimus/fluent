@@ -51,5 +51,5 @@ pub struct Hotkey {
 #[serde(untagged)]
 pub enum Action {
     KeyCombination(Vec<Key>),
-    ModeChange(String),
+    ModeChange { mode: String },
 }

@@ -3,7 +3,7 @@ use fluent::{
     keys::Key,
 };
 use input_event_codes::{
-    KEY_A, KEY_B, KEY_C, KEY_LEFTALT, KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_X, KEY_Y,
+    KEY_2, KEY_A, KEY_B, KEY_C, KEY_LEFTALT, KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_X, KEY_Y,
 };
 
 use crate::common::InputEvent;
@@ -529,4 +529,68 @@ fn regular_key_can_become_modifier() {
     assert_eq!(output_events[3], InputEvent::syn_report());
     assert_eq!(output_events[4], InputEvent::key_release(KEY_Y!()));
     assert_eq!(output_events[5], InputEvent::syn_report());
+}
+
+#[test]
+fn modes_can_be_switched() {
+    let (mut input, mut output) = common::create_event_streams(&[
+        InputEvent::key_press(KEY_X!()),
+        InputEvent::key_release(KEY_X!()),
+        InputEvent::key_press(KEY_2!()),
+        InputEvent::key_release(KEY_2!()),
+        InputEvent::key_press(KEY_X!()),
+        InputEvent::key_release(KEY_X!()),
+    ]);
+
+    let _ = fluent::run(
+        &mut input,
+        &mut output,
+        &Config {
+            modes: vec![
+                Mode {
+                    name: "mode-a".into(),
+                    hotkeys: vec![
+                        Hotkey {
+                            on: vec![Key::X],
+                            action: Action::KeyCombination(vec![Key::A]),
+                        },
+                        Hotkey {
+                            on: vec![Key::Num2],
+                            action: Action::ModeChange {
+                                mode: "mode-b".into(),
+                            },
+                        },
+                    ],
+                    ..Default::default()
+                },
+                Mode {
+                    name: "mode-b".into(),
+                    hotkeys: vec![
+                        Hotkey {
+                            on: vec![Key::X],
+                            action: Action::KeyCombination(vec![Key::B]),
+                        },
+                        Hotkey {
+                            on: vec![Key::Num1],
+                            action: Action::ModeChange {
+                                mode: "mode-a".into(),
+                            },
+                        },
+                    ],
+                    ..Default::default()
+                },
+            ],
+        },
+    );
+
+    let output_events = output.extract_events();
+    assert_eq!(output_events.len(), 8);
+    assert_eq!(output_events[0], InputEvent::key_press(KEY_A!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_release(KEY_A!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
+    assert_eq!(output_events[4], InputEvent::key_press(KEY_B!()));
+    assert_eq!(output_events[5], InputEvent::syn_report());
+    assert_eq!(output_events[6], InputEvent::key_release(KEY_B!()));
+    assert_eq!(output_events[7], InputEvent::syn_report());
 }

@@ -112,10 +112,7 @@ impl Engine {
                     config::Action::KeyCombination(keys) => {
                         send_actions.push(Action::SendKeyEvent(key_press_sequence(&keys)));
                     }
-                    config::Action::ModeChange(mode) => {
-                        eprintln!("mode: {mode}");
-                        self.current_mode = mode.clone()
-                    }
+                    config::Action::ModeChange { mode } => self.current_mode = mode.clone(),
                 }
 
                 (State::CompleteHotkey(action), send_actions)
@@ -145,7 +142,7 @@ impl Engine {
                     config::Action::KeyCombination(keys) => {
                         vec![Action::SendKeyEvent(key_press_sequence(&keys))]
                     }
-                    config::Action::ModeChange(_) => vec![],
+                    config::Action::ModeChange { mode: _ } => vec![],
                 };
 
                 (State::CompleteHotkey(action), send_actions)
@@ -173,7 +170,7 @@ impl Engine {
                                 .collect(),
                         ))]
                     }
-                    config::Action::ModeChange(_) => vec![],
+                    config::Action::ModeChange { mode: _ } => vec![],
                 };
 
                 (State::CompleteHotkey(action.clone()), send_actions)
@@ -183,7 +180,7 @@ impl Engine {
                     config::Action::KeyCombination(keys) => {
                         vec![Action::SendKeyEvent(key_release_sequence(&keys))]
                     }
-                    config::Action::ModeChange(_) => vec![],
+                    config::Action::ModeChange { mode: _ } => vec![],
                 };
 
                 if self.now_pressed.is_empty() {
