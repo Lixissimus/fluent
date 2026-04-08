@@ -16,6 +16,7 @@ pub mod keys;
 
 mod engine;
 mod event;
+mod hypr_config;
 
 pub fn run<I: Read, O: Write>(
     input: &mut I,
