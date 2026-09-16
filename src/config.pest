@@ -1,0 +1,31 @@
+WHITESPACE = _{ " " | "\t" }
+NEWLINE = _{ "\r\n" | "\n" }
+
+file = { SOI ~ statement* ~ EOI }
+
+statement = _{
+  | modifiers
+  | bind
+  | comment
+  | NEWLINE
+}
+
+modifiers = {
+    "modifiers" ~ "=" ~ list ~ NEWLINE?
+}
+
+bind = {
+    "bind" ~ "=" ~ list ~ "->" ~ list ~ NEWLINE?
+}
+
+list = {
+    identifier ~ ("," ~ identifier)*
+}
+
+identifier = @{
+    (!("," | " " | "\t" | "\r" | "\n" | "#" | "->") ~ ANY)+
+}
+
+comment = {
+    "#" ~ (!NEWLINE ~ ANY)*
+}

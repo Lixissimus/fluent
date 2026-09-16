@@ -31,43 +31,18 @@ This ensures that `udevmon` (this tool is part of `interception-tools`) starts t
 
 ### Hotkey Config
 
-The hotkey config is read from `/etc/interception/fluent.json`.
-Here is an example config for a start:
+The hotkey config is read from `/etc/interception/fluent.conf`.
+The format is line-oriented and supports comments:
 
-```json
-{
-    "modifiers": [
-        "ctrl_left",
-        "alt_left",
-        "shift_left",
-        "ctrl_right",
-        "alt_right",
-        "shift_right",
-        "capslock"
-    ],
-    "mappings": [
-        {
-            "on": [
-                "capslock",
-                "j"
-            ],
-            "send": [
-                "left"
-            ]
-        },
-        {
-            "on": [
-                "alt_left",
-                "c"
-            ],
-            "send": [
-                "ctrl_left",
-                "c"
-            ]
-        }
-    ]
-}
+```text
+modifiers = ctrl_left, alt_left, shift_left, ctrl_right, alt_right, shift_right, capslock
+
+bind = capslock, j -> left
+bind = alt_left, capslock, j -> shift_left, left
+bind = capslock, k -> down
 ```
+
+If `modifiers` is omitted, the default Ctrl, Alt, and Shift modifiers are used.
 
 #### Modifiers
 
@@ -81,9 +56,9 @@ Only once a non-modifier that is not `c` is pressed, `alt_left` is sent to the s
 
 #### Mappings
 
-`mappings` is an array of hotkey objects, where each hotkey defines a trigger sequence in `on`.
-The trigger sequence must consist of any number of modifiers and a single non-modifier key.
-The `send` sequence will be sent when the full `on` sequence matches.
+Each `bind` defines a trigger sequence on the left side of `->` and a send
+sequence on the right side. The trigger sequence must consist of any number of
+modifiers and a single non-modifier key. Keys are comma-separated.
 
 If you are unsure about the namings of the keys, check `src/keys.rs`.
 
