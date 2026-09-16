@@ -19,9 +19,6 @@ pub enum ConfigError {
         name: String,
         source: serde_plain::Error,
     },
-
-    #[error("configuration defines more than one mode")]
-    MultipleModes,
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
