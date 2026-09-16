@@ -102,7 +102,7 @@ mod tests {
     use crate::keys::Key;
 
     #[test]
-    fn parses_mode_modifiers_and_bindings() {
+    fn parses_modifiers_and_bindings() {
         let config = parse(
             "modifiers = ctrl_left, alt_left, capslock\n\
              bind = capslock, j -> left\n\
@@ -125,6 +125,33 @@ mod tests {
             config.mappings[1].send,
             vec![Key::ShiftLeft, Key::ArrowLeft]
         );
+    }
+
+    #[test]
+    fn parses_multiline_commands() {
+        let config = parse(
+            "modifiers = ctrl_left,\n\
+             alt_left,\n\
+             capslock\n\
+             bind =\n\n\n\
+             capslock,\n\
+             j\n\
+             ->\n\
+             left,\n\
+             up\n\
+             bind = capslock, k -> down\n",
+        )
+        .unwrap();
+
+        assert_eq!(
+            config.modifiers,
+            vec![Key::CtrlLeft, Key::AltLeft, Key::Capslock]
+        );
+        assert_eq!(config.mappings.len(), 2);
+        assert_eq!(config.mappings[0].on, vec![Key::Capslock, Key::J]);
+        assert_eq!(config.mappings[0].send, vec![Key::ArrowLeft, Key::ArrowUp]);
+        assert_eq!(config.mappings[1].on, vec![Key::Capslock, Key::K]);
+        assert_eq!(config.mappings[1].send, vec![Key::ArrowDown]);
     }
 
     #[test]

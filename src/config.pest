@@ -4,22 +4,22 @@ NEWLINE = _{ "\r\n" | "\n" }
 file = { SOI ~ statement* ~ EOI }
 
 statement = _{
-  | modifiers
+    modifiers
   | bind
   | comment
   | NEWLINE
 }
 
 modifiers = {
-    "modifiers" ~ "=" ~ list ~ NEWLINE?
+    "modifiers" ~ "=" ~ NEWLINE* ~ list ~ NEWLINE?
 }
 
 bind = {
-    "bind" ~ "=" ~ list ~ "->" ~ list ~ NEWLINE?
+    "bind" ~ "=" ~ NEWLINE* ~ list ~ NEWLINE* ~ "->" ~ NEWLINE* ~ list ~ NEWLINE?
 }
 
 list = {
-    identifier ~ ("," ~ identifier)*
+    identifier ~ ("," ~ NEWLINE* ~ identifier)*
 }
 
 identifier = @{
