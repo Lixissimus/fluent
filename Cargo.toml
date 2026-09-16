@@ -7,7 +7,10 @@ edition = "2024"
 input-event-codes = "6.2.0"
 anyhow = "1.0.102"
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.150"
+serde_plain = "1.0.0"
+pest = "2.8.3"
+pest_derive = "2.8.3"
+thiserror = "2.0.17"
  
 [dev-dependencies]
 libc = "0.2.186"
