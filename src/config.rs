@@ -38,12 +38,11 @@ pub fn parse(input: &str) -> Result<Config, ConfigError> {
     for statement in file.into_inner() {
         match statement.as_rule() {
             Rule::modifiers => {
-                config.modifiers = parse_list(
-                    statement
-                        .into_inner()
-                        .find(|pair| pair.as_rule() == Rule::list)
-                        .expect("modifiers always contain a list"),
-                )?;
+                let modifiers_list = statement
+                    .into_inner()
+                    .find(|pair| pair.as_rule() == Rule::list)
+                    .expect("modifiers always contain a list");
+                config.modifiers = parse_list(modifiers_list)?;
             }
             Rule::bind => {
                 let mut lists = statement
@@ -80,14 +79,15 @@ impl Default for Config {
 }
 
 fn default_modifiers() -> Vec<Key> {
-    vec![
+    let keys = vec![
         Key::CtrlLeft,
         Key::CtrlRight,
         Key::AltLeft,
         Key::AltRight,
         Key::ShiftLeft,
         Key::ShiftRight,
-    ]
+    ];
+    keys
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
