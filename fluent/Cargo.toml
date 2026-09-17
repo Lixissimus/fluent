@@ -11,6 +11,8 @@ serde_plain = { workspace = true }
 pest = { workspace = true }
 pest_derive = { workspace = true }
 thiserror = { workspace = true }
+fluent-ipc = { path = "../fluent-ipc" }
+tokio = { workspace = true }
 
 [dev-dependencies]
 libc = { workspace = true }
