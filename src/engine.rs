@@ -18,7 +18,13 @@ pub struct Engine {
 enum State {
     Idle,
     PartialHotkey,
-    CompleteHotkey(Vec<Key>),
+    CompleteHotkey(Vec<TriggeredHotkey>),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct TriggeredHotkey {
+    trigger: KeySet,
+    send: Vec<Key>,
 }
 
 #[derive(Debug)]
@@ -33,7 +39,7 @@ enum Action {
 enum Match {
     Impossible,
     Possible,
-    Complete(Vec<Key>),
+    Complete(TriggeredHotkey),
 }
 
 impl Engine {
@@ -89,8 +95,8 @@ impl Engine {
             ),
             (State::Idle, Action::Press(Match::Complete(triggered))) => {
                 let mut send_keys = key_release_sequence(&self.previously_pressed);
-                send_keys.extend(key_press_sequence(&triggered));
-                (State::CompleteHotkey(triggered.clone()), send_keys)
+                send_keys.extend(key_press_sequence(&triggered.send));
+                (State::CompleteHotkey(vec![triggered.clone()]), send_keys)
             }
             (State::Idle, Action::Repeat) => (
                 State::Idle,
@@ -109,8 +115,8 @@ impl Engine {
                 (State::PartialHotkey, Vec::new())
             }
             (State::PartialHotkey, Action::Press(Match::Complete(triggered))) => (
-                State::CompleteHotkey(triggered.clone()),
-                key_press_sequence(&triggered),
+                State::CompleteHotkey(vec![triggered.clone()]),
+                key_press_sequence(&triggered.send),
             ),
             (State::PartialHotkey, Action::Repeat) => (State::PartialHotkey, Vec::new()),
             (State::PartialHotkey, Action::Release) => {
@@ -121,25 +127,50 @@ impl Engine {
                 }
             }
 
-            (State::CompleteHotkey(triggered), Action::Press(_)) => {
-                (State::CompleteHotkey(triggered.clone()), Vec::new())
+            (State::CompleteHotkey(active), Action::Press(_)) => {
+                let mut active = active.clone();
+                let combination = KeySet::from_iter(self.now_pressed.clone());
+                let output = match self.hotkeys.query_additional(&combination, &active) {
+                    Some(triggered) => {
+                        let output = key_press_sequence(&triggered.send);
+                        active.push(triggered);
+                        output
+                    }
+                    None => Vec::new(),
+                };
+                (State::CompleteHotkey(active), output)
             }
-            (State::CompleteHotkey(triggered), Action::Repeat) => (
-                State::CompleteHotkey(triggered.clone()),
-                key_repeat_sequence(
-                    &triggered
-                        .iter()
-                        .filter(|key| !self.modifiers.contains(key))
-                        .cloned()
-                        .collect(),
-                ),
-            ),
-            (State::CompleteHotkey(triggered), Action::Release) => {
-                let hotkey_release = key_release_sequence(&triggered);
-                if self.now_pressed.is_empty() {
-                    (State::Idle, hotkey_release)
+            (State::CompleteHotkey(active), Action::Repeat) => {
+                let repeat_keys = active
+                    .iter()
+                    .filter(|hotkey| hotkey.trigger.contains(&key))
+                    .flat_map(|hotkey| hotkey.send.iter())
+                    .filter(|key| !self.modifiers.contains(key))
+                    .cloned()
+                    .collect();
+                (
+                    State::CompleteHotkey(active.clone()),
+                    key_repeat_sequence(&repeat_keys),
+                )
+            }
+            (State::CompleteHotkey(active), Action::Release) => {
+                let mut remaining = Vec::new();
+                let mut released = Vec::new();
+                for hotkey in active {
+                    if hotkey.trigger.contains(&key) {
+                        released.extend(key_release_sequence(&hotkey.send));
+                    } else {
+                        remaining.push(hotkey.clone());
+                    }
+                }
+                if remaining.is_empty() {
+                    if self.now_pressed.is_empty() {
+                        (State::Idle, released)
+                    } else {
+                        (State::PartialHotkey, released)
+                    }
                 } else {
-                    (State::PartialHotkey, hotkey_release)
+                    (State::CompleteHotkey(remaining), released)
                 }
             }
 
@@ -204,7 +235,10 @@ impl Hotkeys {
     fn query(&self, combination: &KeySet) -> Match {
         for (trigger, send) in &self.mappings {
             if trigger == combination {
-                return Match::Complete(send.clone());
+                return Match::Complete(TriggeredHotkey {
+                    trigger: trigger.clone(),
+                    send: send.clone(),
+                });
             }
             // match is only still possible if there are only modifers pressed yet, otherwise it must be complete
             if trigger.is_superset(combination)
@@ -215,13 +249,28 @@ impl Hotkeys {
         }
         Match::Impossible
     }
+
+    fn query_additional(
+        &self,
+        combination: &KeySet,
+        active: &[TriggeredHotkey],
+    ) -> Option<TriggeredHotkey> {
+        self.mappings.iter().find_map(|(trigger, send)| {
+            (trigger.is_subset(combination)
+                && !active.iter().any(|hotkey| hotkey.trigger == *trigger))
+            .then(|| TriggeredHotkey {
+                trigger: trigger.clone(),
+                send: send.clone(),
+            })
+        })
+    }
 }
 
 #[cfg(test)]
 mod hotkeys_test {
     use crate::{
         config::{Config, Mapping},
-        engine::{Hotkeys, KeySet, Match},
+        engine::{Hotkeys, KeySet, Match, TriggeredHotkey},
         keys::Key,
     };
 
@@ -399,7 +448,13 @@ mod hotkeys_test {
 
         let result = sut.query(&KeySet::from([Key::A]));
 
-        assert_eq!(result, Match::Complete(vec![Key::B]));
+        assert_eq!(
+            result,
+            Match::Complete(TriggeredHotkey {
+                trigger: KeySet::from([Key::A]),
+                send: vec![Key::B],
+            })
+        );
     }
 
     #[test]
@@ -414,7 +469,13 @@ mod hotkeys_test {
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft, Key::A]));
 
-        assert_eq!(result, Match::Complete(vec![Key::B]));
+        assert_eq!(
+            result,
+            Match::Complete(TriggeredHotkey {
+                trigger: KeySet::from([Key::CtrlLeft, Key::A]),
+                send: vec![Key::B],
+            })
+        );
     }
 
     #[test]
@@ -429,7 +490,13 @@ mod hotkeys_test {
 
         let result = sut.query(&KeySet::from([Key::CtrlLeft, Key::AltLeft, Key::A]));
 
-        assert_eq!(result, Match::Complete(vec![Key::B]));
+        assert_eq!(
+            result,
+            Match::Complete(TriggeredHotkey {
+                trigger: KeySet::from([Key::CtrlLeft, Key::AltLeft, Key::A]),
+                send: vec![Key::B],
+            })
+        );
     }
 
     #[test]
@@ -463,7 +530,10 @@ mod hotkeys_test {
         );
         assert_eq!(
             sut.query(&KeySet::from([Key::CtrlLeft, Key::AltLeft, Key::C])),
-            Match::Complete(vec![Key::CtrlLeft, Key::V])
+            Match::Complete(TriggeredHotkey {
+                trigger: KeySet::from([Key::CtrlLeft, Key::AltLeft, Key::C]),
+                send: vec![Key::CtrlLeft, Key::V],
+            })
         );
     }
 

@@ -3,7 +3,7 @@ use fluent::{
     keys::Key,
 };
 use input_event_codes::{
-    KEY_A, KEY_B, KEY_C, KEY_LEFTALT, KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_X, KEY_Y,
+    KEY_A, KEY_B, KEY_C, KEY_LEFTALT, KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_RIGHT, KEY_UP, KEY_X, KEY_Y,
 };
 
 use crate::common::InputEvent;
@@ -498,4 +498,89 @@ fn regular_key_can_become_modifier() {
     assert_eq!(output_events[3], InputEvent::syn_report());
     assert_eq!(output_events[4], InputEvent::key_release(KEY_Y!()));
     assert_eq!(output_events[5], InputEvent::syn_report());
+}
+
+#[test]
+fn second_hotkey_pressed_before_first_released() {
+    let (mut input, mut output) = common::create_event_streams(&[
+        InputEvent::key_press(KEY_LEFTCTRL!()),
+        InputEvent::key_press(KEY_A!()),
+        InputEvent::key_press(KEY_B!()),
+        InputEvent::key_release(KEY_A!()),
+        InputEvent::key_release(KEY_B!()),
+        InputEvent::key_release(KEY_LEFTCTRL!()),
+    ]);
+
+    let _ = fluent::run(
+        &mut input,
+        &mut output,
+        &Config {
+            mappings: vec![
+                Mapping {
+                    on: vec![Key::CtrlLeft, Key::A],
+                    send: vec![Key::ArrowUp],
+                },
+                Mapping {
+                    on: vec![Key::CtrlLeft, Key::B],
+                    send: vec![Key::ArrowRight],
+                },
+            ],
+            ..Default::default()
+        },
+    );
+
+    let output_events = output.extract_events();
+    assert_eq!(output_events.len(), 8);
+    assert_eq!(output_events[0], InputEvent::key_press(KEY_UP!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_press(KEY_RIGHT!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
+    assert_eq!(output_events[4], InputEvent::key_release(KEY_UP!()));
+    assert_eq!(output_events[5], InputEvent::syn_report());
+    assert_eq!(output_events[6], InputEvent::key_release(KEY_RIGHT!()));
+    assert_eq!(output_events[7], InputEvent::syn_report());
+}
+
+#[test]
+fn repeat_only_affects_matching_hotkey() {
+    let (mut input, mut output) = common::create_event_streams(&[
+        InputEvent::key_press(KEY_LEFTCTRL!()),
+        InputEvent::key_press(KEY_A!()),
+        InputEvent::key_press(KEY_B!()),
+        InputEvent::key_repeat(KEY_A!()),
+        InputEvent::key_release(KEY_A!()),
+        InputEvent::key_release(KEY_B!()),
+        InputEvent::key_release(KEY_LEFTCTRL!()),
+    ]);
+
+    let _ = fluent::run(
+        &mut input,
+        &mut output,
+        &Config {
+            mappings: vec![
+                Mapping {
+                    on: vec![Key::CtrlLeft, Key::A],
+                    send: vec![Key::ArrowUp],
+                },
+                Mapping {
+                    on: vec![Key::CtrlLeft, Key::B],
+                    send: vec![Key::ArrowRight],
+                },
+            ],
+            ..Default::default()
+        },
+    );
+
+    let output_events = output.extract_events();
+    assert_eq!(output_events.len(), 10);
+    assert_eq!(output_events[0], InputEvent::key_press(KEY_UP!()));
+    assert_eq!(output_events[1], InputEvent::syn_report());
+    assert_eq!(output_events[2], InputEvent::key_press(KEY_RIGHT!()));
+    assert_eq!(output_events[3], InputEvent::syn_report());
+    assert_eq!(output_events[4], InputEvent::key_repeat(KEY_UP!()));
+    assert_eq!(output_events[5], InputEvent::syn_report());
+    assert_eq!(output_events[6], InputEvent::key_release(KEY_UP!()));
+    assert_eq!(output_events[7], InputEvent::syn_report());
+    assert_eq!(output_events[8], InputEvent::key_release(KEY_RIGHT!()));
+    assert_eq!(output_events[9], InputEvent::syn_report());
 }
