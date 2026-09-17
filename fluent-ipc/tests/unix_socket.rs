@@ -91,3 +91,28 @@ async fn connection_rejects_unterminated_message() {
         Err(Error::UnterminatedMessage)
     ));
 }
+
+#[tokio::test]
+async fn aggregator_removes_stale_socket() {
+    let path = socket_path();
+    let stale_listener = std::os::unix::net::UnixListener::bind(&path).expect("bind stale socket");
+    drop(stale_listener);
+
+    let aggregator = Aggregator::bind(&path)
+        .await
+        .expect("bind stale socket path");
+    assert_eq!(aggregator.path(), path);
+}
+
+#[tokio::test]
+async fn aggregator_rejects_an_active_socket() {
+    let path = socket_path();
+    let aggregator = Aggregator::bind(&path).await.expect("bind socket");
+
+    let result = Aggregator::bind(&path).await;
+    assert!(
+        matches!(result, Err(Error::Io(error)) if error.kind() == std::io::ErrorKind::AddrInUse)
+    );
+
+    drop(aggregator);
+}

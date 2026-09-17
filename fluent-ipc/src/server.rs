@@ -18,6 +18,7 @@ pub struct Aggregator {
 impl Aggregator {
     pub async fn bind(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref().to_owned();
+        remove_stale_socket(&path).await?;
         let listener = UnixListener::bind(&path)?;
         Ok(Self {
             listener,
@@ -32,6 +33,25 @@ impl Aggregator {
 
     pub fn path(&self) -> &Path {
         &self.path
+    }
+}
+
+async fn remove_stale_socket(path: &Path) -> Result<()> {
+    if !path.exists() {
+        return Ok(());
+    }
+
+    match UnixStream::connect(path).await {
+        Ok(_) => Err(std::io::Error::new(
+            std::io::ErrorKind::AddrInUse,
+            "another aggregator is already listening",
+        )
+        .into()),
+        Err(error) if error.kind() == std::io::ErrorKind::ConnectionRefused => {
+            std::fs::remove_file(path)?;
+            Ok(())
+        }
+        Err(error) => Err(error.into()),
     }
 }
 
