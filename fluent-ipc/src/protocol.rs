@@ -16,12 +16,28 @@ impl Message {
             kind: MessageKind::Status { pid },
         }
     }
+
+    pub fn instances(inst: &[Instance]) -> Self {
+        Self {
+            version: PROTOCOL_VERSION,
+            kind: MessageKind::Instances {
+                instances: inst.into(),
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum MessageKind {
     Status { pid: u32 },
+    Instances { instances: Vec<Instance> },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct Instance {
+    pub pid: u32,
 }
 
 #[cfg(test)]

@@ -43,7 +43,7 @@ impl Connection {
     }
 
     pub async fn send(&mut self, message: &Message) -> Result<(), SendError> {
-        let mut frame = serde_json::to_vec(message).unwrap();
+        let mut frame = serde_json::to_vec(message)?;
         frame.push(b'\n');
         self.writer.write_all(&frame).await?;
         self.writer.flush().await?;

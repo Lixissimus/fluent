@@ -6,7 +6,7 @@ use std::{
 };
 
 use anyhow::{Context, anyhow};
-use fluent_ipc::Client;
+use fluent_ipc::{Connection, Message};
 
 const AGGREGATOR_SOCKET: &str = "/tmp/fluent.sock";
 const STATUS_INTERVAL: Duration = Duration::from_secs(5);
@@ -43,7 +43,7 @@ fn start_status_reporter() {
 async fn report_status(socket_path: PathBuf) {
     loop {
         let mut client = loop {
-            match Client::connect(&socket_path).await {
+            match Connection::connect(&socket_path).await {
                 Ok(client) => break client,
                 Err(error) => {
                     eprintln!("could not connect to aggregator: {error}");
@@ -53,7 +53,7 @@ async fn report_status(socket_path: PathBuf) {
         };
 
         loop {
-            if let Err(error) = client.send_status().await {
+            if let Err(error) = client.send(&Message::status(std::process::id())).await {
                 eprintln!("could not report Fluent status: {error}");
                 break;
             }

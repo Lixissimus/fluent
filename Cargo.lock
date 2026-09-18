@@ -61,6 +61,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "fluent-status"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "fluent-ipc",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "input-event-codes"
 version = "6.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

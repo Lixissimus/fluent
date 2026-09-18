@@ -1,7 +1,8 @@
-use std::{env, ffi::OsString, path::PathBuf};
+use std::{env, eprintln, ffi::OsString, path::PathBuf, time::Duration};
 
 use anyhow::{Context, bail};
-use fluent_ipc::{Connection, Socket};
+use fluent_ipc::{Connection, Instance, Message, Socket};
+use tokio::time;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -65,16 +66,16 @@ async fn handle_aggregator_connection(mut connection: Connection) {
 
 async fn handle_interface_connection(mut connection: Connection) {
     loop {
-        match connection.next_message().await {
-            Ok(Some(message)) => match serde_json::to_string(&message) {
-                Ok(message) => println!("{message}"),
-                Err(error) => eprintln!("could not encode received message: {error}"),
-            },
-            Ok(None) => return,
-            Err(error) => {
-                eprintln!("could not read client message: {error}");
-                return;
-            }
-        }
+        if let Err(error) = connection
+            .send(&Message::instances(&[
+                Instance { pid: 123 },
+                Instance { pid: 456 },
+            ]))
+            .await
+        {
+            eprintln!("could not send interface message: {error}");
+            return;
+        };
+        time::sleep(Duration::from_secs(5)).await;
     }
 }

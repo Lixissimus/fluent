@@ -5,5 +5,5 @@ mod server;
 
 pub use connection::Connection;
 pub use error::*;
-pub use protocol::{Message, MessageKind, PROTOCOL_VERSION};
+pub use protocol::{Instance, Message, MessageKind, PROTOCOL_VERSION};
 pub use server::Socket;
