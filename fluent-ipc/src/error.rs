@@ -1,15 +1,28 @@
 use std::io;
 
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
+pub enum ReceiveError {
     #[error("Unix socket I/O failed: {0}")]
     Io(#[from] io::Error),
 
-    #[error("could not encode or decode IPC message: {0}")]
+    #[error("could not decode IPC message: {0}")]
     Json(#[from] serde_json::Error),
 
     #[error("received an unterminated IPC message")]
     UnterminatedMessage,
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+#[derive(Debug, thiserror::Error)]
+pub enum SendError {
+    #[error("Unix socket I/O failed: {0}")]
+    Io(#[from] io::Error),
+
+    #[error("could not encode IPC message: {0}")]
+    Json(#[from] serde_json::Error),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum ConnectError {
+    #[error("Unix socket I/O failed: {0}")]
+    Io(#[from] io::Error),
+}

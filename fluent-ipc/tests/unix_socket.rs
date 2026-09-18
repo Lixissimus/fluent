@@ -1,6 +1,6 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use fluent_ipc::{Aggregator, Client, Error, Message};
+use fluent_ipc::{ConnectError, Connection, Message, ReceiveError, Socket};
 use tokio::io::AsyncWriteExt;
 
 fn socket_path() -> std::path::PathBuf {
@@ -14,31 +14,44 @@ fn socket_path() -> std::path::PathBuf {
 #[tokio::test]
 async fn client_reports_pid_to_aggregator() {
     let path = socket_path();
-    let aggregator = Aggregator::bind(&path).await.expect("bind socket");
-    let mut client = Client::connect(&path).await.expect("connect client");
+    let aggregator = Socket::bind(&path).await.expect("bind socket");
+    let mut client = Connection::connect(&path).await.expect("connect client");
     let mut connection = aggregator.accept().await.expect("accept client");
 
-    client.send_status().await.expect("send status");
+    client
+        .send(&Message::status(1234))
+        .await
+        .expect("send status");
     let message = connection
         .next_message()
         .await
         .expect("read message")
         .expect("message");
-    assert_eq!(message, Message::status(std::process::id()));
+    assert_eq!(message, Message::status(1234));
 }
 
 #[tokio::test]
 async fn aggregator_accepts_multiple_clients() {
     let path = socket_path();
-    let aggregator = Aggregator::bind(&path).await.expect("bind socket");
-    let mut first = Client::connect(&path).await.expect("connect first client");
-    let mut second = Client::connect(&path).await.expect("connect second client");
+    let aggregator = Socket::bind(&path).await.expect("bind socket");
+    let mut first = Connection::connect(&path)
+        .await
+        .expect("connect first client");
+    let mut second = Connection::connect(&path)
+        .await
+        .expect("connect second client");
 
     let mut first_connection = aggregator.accept().await.expect("accept first client");
     let mut second_connection = aggregator.accept().await.expect("accept second client");
 
-    first.send_status().await.expect("send first status");
-    second.send_status().await.expect("send second status");
+    first
+        .send(&Message::status(1))
+        .await
+        .expect("send first status");
+    second
+        .send(&Message::status(2))
+        .await
+        .expect("send second status");
 
     assert_eq!(
         first_connection
@@ -46,7 +59,7 @@ async fn aggregator_accepts_multiple_clients() {
             .await
             .expect("read first")
             .expect("first message"),
-        Message::status(std::process::id())
+        Message::status(1)
     );
     assert_eq!(
         second_connection
@@ -54,15 +67,15 @@ async fn aggregator_accepts_multiple_clients() {
             .await
             .expect("read second")
             .expect("second message"),
-        Message::status(std::process::id())
+        Message::status(2)
     );
 }
 
 #[tokio::test]
 async fn connection_reports_clean_disconnect() {
     let path = socket_path();
-    let aggregator = Aggregator::bind(&path).await.expect("bind socket");
-    let client = Client::connect(&path).await.expect("connect client");
+    let aggregator = Socket::bind(&path).await.expect("bind socket");
+    let client = Connection::connect(&path).await.expect("connect client");
     let mut connection = aggregator.accept().await.expect("accept client");
     drop(client);
     assert_eq!(
@@ -74,7 +87,7 @@ async fn connection_reports_clean_disconnect() {
 #[tokio::test]
 async fn connection_rejects_unterminated_message() {
     let path = socket_path();
-    let aggregator = Aggregator::bind(&path).await.expect("bind socket");
+    let aggregator = Socket::bind(&path).await.expect("bind socket");
     let mut client = tokio::net::UnixStream::connect(&path)
         .await
         .expect("connect client");
@@ -88,7 +101,7 @@ async fn connection_rejects_unterminated_message() {
 
     assert!(matches!(
         connection.next_message().await,
-        Err(Error::UnterminatedMessage)
+        Err(ReceiveError::UnterminatedMessage)
     ));
 }
 
@@ -98,20 +111,18 @@ async fn aggregator_removes_stale_socket() {
     let stale_listener = std::os::unix::net::UnixListener::bind(&path).expect("bind stale socket");
     drop(stale_listener);
 
-    let aggregator = Aggregator::bind(&path)
-        .await
-        .expect("bind stale socket path");
+    let aggregator = Socket::bind(&path).await.expect("bind stale socket path");
     assert_eq!(aggregator.path(), path);
 }
 
 #[tokio::test]
 async fn aggregator_rejects_an_active_socket() {
     let path = socket_path();
-    let aggregator = Aggregator::bind(&path).await.expect("bind socket");
+    let aggregator = Socket::bind(&path).await.expect("bind socket");
 
-    let result = Aggregator::bind(&path).await;
+    let result = Socket::bind(&path).await;
     assert!(
-        matches!(result, Err(Error::Io(error)) if error.kind() == std::io::ErrorKind::AddrInUse)
+        matches!(result, Err(ConnectError::Io(error)) if error.kind() == std::io::ErrorKind::AddrInUse)
     );
 
     drop(aggregator);
