@@ -1,0 +1,11 @@
+[package]
+name = "fluentctl"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { workspace = true }
+fluent-ipc = { path = "../fluent-ipc" }
+anyhow = { workspace = true }
+serde_json = { workspace = true }
+clap = { workspace = true }

@@ -1,9 +1,9 @@
-mod client;
+mod connection;
 mod error;
-mod protocol;
 mod server;
 
-pub use client::Client;
-pub use error::{Error, Result};
-pub use protocol::{Message, MessageKind, PROTOCOL_VERSION};
-pub use server::{Aggregator, Connection};
+pub mod protocol;
+
+pub use connection::Connection;
+pub use error::*;
+pub use server::Socket;

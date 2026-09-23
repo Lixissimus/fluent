@@ -1,5 +1,5 @@
 [package]
-name = "fluent-aggregator"
+name = "fluentd"
 version = "0.1.0"
 edition = "2024"
 
@@ -8,3 +8,4 @@ anyhow = { workspace = true }
 fluent-ipc = { path = "../fluent-ipc" }
 serde_json = { workspace = true }
 tokio = { workspace = true }
+clap = { workspace = true }
