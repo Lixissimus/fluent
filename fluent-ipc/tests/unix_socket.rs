@@ -11,7 +11,8 @@ fn socket_path() -> std::path::PathBuf {
         .duration_since(UNIX_EPOCH)
         .expect("system clock is before Unix epoch")
         .as_nanos();
-    std::env::temp_dir().join(format!("fluent-ipc-{nonce}.sock"))
+    let random: u64 = rand::random();
+    std::env::temp_dir().join(format!("fluent-ipc-{nonce}-{random}.sock"))
 }
 
 #[tokio::test]
