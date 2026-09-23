@@ -163,17 +163,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fluent-aggregator"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "fluent-ipc",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "fluent-ipc"
 version = "0.1.0"
 dependencies = [
@@ -186,6 +175,17 @@ dependencies = [
 
 [[package]]
 name = "fluentctl"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "fluent-ipc",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "fluentd"
 version = "0.1.0"
 dependencies = [
  "anyhow",

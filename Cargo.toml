@@ -1,5 +1,5 @@
 [workspace]
-members = ["fluent", "fluent-ipc", "fluent-aggregator", "fluentctl"]
+members = ["fluent", "fluent-ipc", "fluentd", "fluentctl"]
 resolver = "3"
 
 [workspace.dependencies]
