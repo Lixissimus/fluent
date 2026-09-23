@@ -1,19 +1,31 @@
 use std::{
     io,
+    marker::PhantomData,
     path::{Path, PathBuf},
     sync::Arc,
 };
 
+use serde::{Serialize, de::DeserializeOwned};
 use tokio::net::{UnixListener, UnixStream};
 
 use crate::{Connection, error::ConnectError};
 
-pub struct Socket {
+pub struct Socket<R, S>
+where
+    R: Serialize + DeserializeOwned,
+    S: Serialize + DeserializeOwned,
+{
     listener: UnixListener,
     path: Arc<PathBuf>,
+    _phantom_data1: PhantomData<R>,
+    _phantom_data2: PhantomData<S>,
 }
 
-impl Socket {
+impl<R, S> Socket<R, S>
+where
+    R: Serialize + DeserializeOwned,
+    S: Serialize + DeserializeOwned,
+{
     pub async fn bind(path: impl AsRef<Path>) -> Result<Self, ConnectError> {
         let path = path.as_ref().to_owned();
         remove_stale_socket(&path).await?;
@@ -21,10 +33,12 @@ impl Socket {
         Ok(Self {
             listener,
             path: Arc::new(path),
+            _phantom_data1: PhantomData,
+            _phantom_data2: PhantomData,
         })
     }
 
-    pub async fn accept(&self) -> Result<Connection, ConnectError> {
+    pub async fn accept(&self) -> Result<Connection<R, S>, ConnectError> {
         let (stream, _) = self.listener.accept().await?;
         Ok(Connection::new(stream))
     }
@@ -53,7 +67,11 @@ async fn remove_stale_socket(path: &Path) -> Result<(), io::Error> {
     }
 }
 
-impl Drop for Socket {
+impl<R, S> Drop for Socket<R, S>
+where
+    R: Serialize + DeserializeOwned,
+    S: Serialize + DeserializeOwned,
+{
     fn drop(&mut self) {
         let _ = std::fs::remove_file(self.path.as_ref());
     }

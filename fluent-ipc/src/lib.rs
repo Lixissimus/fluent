@@ -1,9 +1,9 @@
 mod connection;
 mod error;
-mod protocol;
 mod server;
+
+pub mod protocol;
 
 pub use connection::Connection;
 pub use error::*;
-pub use protocol::{Instance, Message, MessageKind, PROTOCOL_VERSION};
 pub use server::Socket;

@@ -1,32 +1,52 @@
-use std::{env, eprintln, ffi::OsString, path::PathBuf, time::Duration};
+use std::{
+    collections::HashSet,
+    eprintln,
+    path::PathBuf,
+    println,
+    sync::{Arc, Mutex},
+};
 
-use anyhow::{Context, bail};
-use fluent_ipc::{Connection, Instance, Message, Socket};
-use tokio::time;
+use anyhow::Context;
+use clap::Parser;
+use fluent_ipc::{protocol::ctrl, protocol::inst};
+
+#[derive(Debug, Parser)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Socket for communication with fluentctl
+    ///
+    /// The default value is fine as long as you don't also change the socket when running fluentctl
+    #[arg(long, default_value = "/tmp/fluent-if.sock")]
+    if_socket: PathBuf,
+
+    /// Socket for communication with the fluent instances
+    ///
+    /// The default value is fine as long as you don't also change the socket when running the instances
+    #[arg(long, default_value = "/tmp/fluent.sock")]
+    inst_socket: PathBuf,
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let socket_path = socket_path_from_args()?;
-    let aggregator = Socket::bind(&socket_path).await.with_context(|| {
-        format!(
-            "could not bind aggregator socket at {}",
-            socket_path.display()
-        )
-    })?;
-
-    let interface = Socket::bind("/tmp/fluent-if.sock")
+    let args = Args::parse();
+    let instance_server = inst::Server::bind(&args.inst_socket)
         .await
-        .with_context(|| "could not bind interface socket at /tmp/fluent-if.sock")?;
+        .with_context(|| format!("could not bind aggregator socket at {:?}", args.inst_socket))?;
 
+    let ctrl_server = ctrl::Server::bind(&args.if_socket)
+        .await
+        .with_context(|| format!("could not bind interface socket at {:?}", args.if_socket))?;
+
+    let instances = Arc::new(Mutex::new(HashSet::new()));
     loop {
         tokio::select! {
-            result = aggregator.accept() => {
+            result = instance_server.accept() => {
                 let connection = result?;
-                tokio::spawn(handle_aggregator_connection(connection));
+                tokio::spawn(handle_instance_connection(connection, instances.clone()));
             }
-            result = interface.accept() => {
+            result = ctrl_server.accept() => {
                 let connection = result?;
-                tokio::spawn(handle_interface_connection(connection));
+                tokio::spawn(handle_ctrl_connection(connection, instances.clone()));
             }
             result = tokio::signal::ctrl_c() => {
                 result.context("could not listen for Ctrl-C")?;
@@ -37,23 +57,16 @@ async fn main() -> anyhow::Result<()> {
     }
 }
 
-fn socket_path_from_args() -> anyhow::Result<PathBuf> {
-    let mut args = env::args_os();
-    let program = args
-        .next()
-        .unwrap_or_else(|| OsString::from("fluent-aggregator"));
-    let Some(socket_path) = args.next() else {
-        bail!("usage: {} SOCKET_PATH", program.to_string_lossy());
-    };
-    Ok(PathBuf::from(socket_path))
-}
-
-async fn handle_aggregator_connection(mut connection: Connection) {
+async fn handle_instance_connection(
+    mut connection: inst::ServerConnection,
+    instances: Arc<Mutex<HashSet<u32>>>,
+) {
     loop {
         match connection.next_message().await {
-            Ok(Some(message)) => match serde_json::to_string(&message) {
-                Ok(message) => println!("{message}"),
-                Err(error) => eprintln!("could not encode received message: {error}"),
+            Ok(Some(message)) => match message.kind {
+                inst::ClientMessageKind::Status { pid } => {
+                    instances.lock().unwrap().insert(pid);
+                }
             },
             Ok(None) => return,
             Err(error) => {
@@ -64,18 +77,25 @@ async fn handle_aggregator_connection(mut connection: Connection) {
     }
 }
 
-async fn handle_interface_connection(mut connection: Connection) {
+async fn handle_ctrl_connection(
+    mut connection: ctrl::ServerConnection,
+    instances: Arc<Mutex<HashSet<u32>>>,
+) {
     loop {
-        if let Err(error) = connection
-            .send(&Message::instances(&[
-                Instance { pid: 123 },
-                Instance { pid: 456 },
-            ]))
-            .await
-        {
-            eprintln!("could not send interface message: {error}");
-            return;
-        };
-        time::sleep(Duration::from_secs(5)).await;
+        match connection.next_message().await {
+            Ok(Some(message)) => match message.kind {
+                ctrl::ClientMessageKind::GetStatus => {
+                    let pids: Vec<_> = instances.lock().unwrap().iter().map(|pid| *pid).collect();
+                    if let Err(e) = connection.send(&ctrl::ServerMessage::status(&pids)).await {
+                        eprintln!("error sending ctrl message: {e}")
+                    }
+                }
+            },
+            Ok(None) => {
+                println!("ctrl connection closed");
+                break;
+            }
+            Err(e) => eprintln!("error receiving ctrl message: {e}"),
+        }
     }
 }
