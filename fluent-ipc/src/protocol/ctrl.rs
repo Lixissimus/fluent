@@ -18,12 +18,19 @@ impl ClientMessage {
             kind: ClientMessageKind::GetStatus,
         }
     }
+
+    pub fn set_active(pid: u32, val: bool) -> Self {
+        Self {
+            kind: ClientMessageKind::SetActive { pid, val },
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ClientMessageKind {
     GetStatus,
+    SetActive { pid: u32, val: bool },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -33,14 +40,9 @@ pub struct ServerMessage {
 }
 
 impl ServerMessage {
-    pub fn status(pids: &[u32]) -> Self {
+    pub fn status(instances: Vec<InstanceStatus>) -> Self {
         Self {
-            kind: ServerMessageKind::Status {
-                instances: pids
-                    .iter()
-                    .map(|pid| InstanceStatus { pid: *pid })
-                    .collect(),
-            },
+            kind: ServerMessageKind::Status { instances },
         }
     }
 }
@@ -55,4 +57,5 @@ pub enum ServerMessageKind {
 #[serde(rename_all = "snake_case")]
 pub struct InstanceStatus {
     pub pid: u32,
+    pub active: bool,
 }

@@ -25,19 +25,35 @@ enum Command {
         #[arg(long, default_value_t = false)]
         watch: bool,
     },
+
+    /// Enable processing of hotkeys of a particular instance
+    Enable {
+        /// pid of the instance
+        #[arg(short, long)]
+        pid: u32,
+    },
+
+    /// Disable processing of hotkeys of a particular instance
+    Disable {
+        /// pid of the instance
+        #[arg(short, long)]
+        pid: u32,
+    },
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    let connection = ClientConnection::connect(args.socket).await?;
+    let mut connection = ClientConnection::connect(args.socket).await?;
 
     match args.command {
-        Command::Status { watch } => run_status(connection, watch).await,
+        Command::Status { watch } => run_status(&mut connection, watch).await,
+        Command::Enable { pid } => set_active(&mut connection, pid, true).await,
+        Command::Disable { pid } => set_active(&mut connection, pid, false).await,
     }
 }
 
-async fn run_status(mut connection: ClientConnection, watch: bool) -> anyhow::Result<()> {
+async fn run_status(connection: &mut ClientConnection, watch: bool) -> anyhow::Result<()> {
     loop {
         connection.send(&ClientMessage::get_status()).await?;
         match connection.next_message().await {
@@ -57,5 +73,16 @@ async fn run_status(mut connection: ClientConnection, watch: bool) -> anyhow::Re
         time::sleep(Duration::from_secs(5)).await;
     }
 
+    Ok(())
+}
+
+async fn set_active(
+    connection: &mut ClientConnection,
+    pid: u32,
+    active: bool,
+) -> anyhow::Result<()> {
+    connection
+        .send(&ClientMessage::set_active(pid, active))
+        .await?;
     Ok(())
 }

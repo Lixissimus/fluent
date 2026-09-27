@@ -1,6 +1,7 @@
 use anyhow::Context;
 use std::{
     io::{Read, Write},
+    sync::{Arc, Mutex},
     thread,
     time::Duration,
 };
@@ -21,6 +22,7 @@ pub fn run<I: Read, O: Write>(
     input: &mut I,
     output: &mut O,
     config: &Config,
+    active: Arc<Mutex<bool>>,
 ) -> anyhow::Result<()> {
     let mut input_buffer = EventBuffer::default();
     let mut engine = Engine::new(config);
@@ -37,9 +39,13 @@ pub fn run<I: Read, O: Write>(
             print_event(output, &evt).context("could not forward non-key event")?;
             continue;
         }
-
-        for output_event in engine.handle(evt) {
-            print_event(output, &output_event).context("could not send event")?;
+        if *active.lock().unwrap() {
+            // todo: release all pressed hotkeys when deactivating
+            for output_event in engine.handle(evt) {
+                print_event(output, &output_event).context("could not send event")?;
+            }
+        } else {
+            print_event(output, &evt).context("could not forward event in inactive mode")?;
         }
     }
 }

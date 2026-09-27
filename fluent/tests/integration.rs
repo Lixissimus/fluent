@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use fluent::{
     config::{Config, Mapping},
     keys::Key,
@@ -28,6 +30,7 @@ fn pass_through_unmapped_key_events() {
             }],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -38,6 +41,34 @@ fn pass_through_unmapped_key_events() {
     assert_eq!(output_events[3], InputEvent::syn_report());
     assert_eq!(output_events[4], InputEvent::key_release(KEY_A!()));
     assert_eq!(output_events[5], InputEvent::syn_report());
+}
+
+#[test]
+fn pass_through_in_inactive_mode() {
+    let (mut input, mut output) = common::create_event_streams(&[
+        InputEvent::key_press(KEY_A!()),
+        InputEvent::key_repeat(KEY_A!()),
+        InputEvent::key_release(KEY_A!()),
+    ]);
+
+    let _ = fluent::run(
+        &mut input,
+        &mut output,
+        &Config {
+            mappings: vec![Mapping {
+                on: vec![Key::A],
+                send: vec![Key::B],
+            }],
+            ..Default::default()
+        },
+        Arc::new(Mutex::new(false)),
+    );
+
+    let output_events = output.extract_events();
+    assert_eq!(output_events.len(), 3);
+    assert_eq!(output_events[0], InputEvent::key_press(KEY_A!()));
+    assert_eq!(output_events[1], InputEvent::key_repeat(KEY_A!()));
+    assert_eq!(output_events[2], InputEvent::key_release(KEY_A!()));
 }
 
 #[test]
@@ -58,6 +89,7 @@ fn remap_single_key_events() {
             }],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -89,6 +121,7 @@ fn press_and_release_once_with_single_modifier() {
             }],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -118,6 +151,7 @@ fn press_and_release_modifier_first_once_with_single_modifier() {
             }],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -149,6 +183,7 @@ fn press_repeat_and_release_with_single_modifier() {
             }],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -184,6 +219,7 @@ fn press_repeat_and_release_modifier_first_with_single_modifier() {
             }],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -223,6 +259,7 @@ fn press_and_release_twice_with_single_modifier() {
             }],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -256,6 +293,7 @@ fn release_multiple_hotkeys_in_reverse_order() {
             }],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -289,6 +327,7 @@ fn send_collected_keys_once_match_is_impossible() {
             }],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -331,6 +370,7 @@ fn trigger_hotkey_in_multiple_attempts() {
             ],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -363,6 +403,7 @@ fn trigger_hotkey_after_unhandled_key_combination() {
             }],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -400,6 +441,7 @@ fn simple_handled_modifer_press_repeat_and_release() {
             }],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -425,6 +467,7 @@ fn simple_unhandled_modifer_press_repeat_and_release_drops_repeat() {
             }],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -454,6 +497,7 @@ fn unhandled_combination_is_forwarded() {
             }],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -488,6 +532,7 @@ fn regular_key_can_become_modifier() {
             }],
             modifiers: vec![Key::A],
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -527,6 +572,7 @@ fn second_hotkey_pressed_before_first_released() {
             ],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();
@@ -569,6 +615,7 @@ fn repeat_only_affects_matching_hotkey() {
             ],
             ..Default::default()
         },
+        Arc::new(Mutex::new(true)),
     );
 
     let output_events = output.extract_events();

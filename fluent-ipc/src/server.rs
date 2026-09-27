@@ -1,6 +1,8 @@
 use std::{
+    fs::{self},
     io,
     marker::PhantomData,
+    os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -30,6 +32,9 @@ where
         let path = path.as_ref().to_owned();
         remove_stale_socket(&path).await?;
         let listener = UnixListener::bind(&path)?;
+        let mut perm = fs::metadata(&path)?.permissions();
+        perm.set_mode(0o666);
+        std::fs::set_permissions(&path, perm)?;
         Ok(Self {
             listener,
             path: Arc::new(path),
