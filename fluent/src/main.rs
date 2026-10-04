@@ -87,7 +87,7 @@ async fn report_status(socket_path: PathBuf, active: Arc<Mutex<bool>>) {
                                 break;
                             }
                         }
-                        ServerMessageKind::SetActive(val) => {
+                        ServerMessageKind::SetActive { val } => {
                             *active.lock().unwrap() = val;
                             if let Err(error) = client
                                 .send(&ClientMessage::status(

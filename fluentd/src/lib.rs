@@ -8,6 +8,7 @@ use fluent_ipc::protocol::{
     ctrl::{self, InstanceStatus},
     inst,
 };
+use tokio::sync::mpsc;
 
 use crate::args::Args;
 
@@ -45,6 +46,7 @@ pub async fn run(args: Args) -> anyhow::Result<()> {
 struct Instance {
     pid: u32,
     active: bool,
+    command_tx: mpsc::UnboundedSender<bool>,
 }
 
 impl From<&Instance> for InstanceStatus {
@@ -62,9 +64,12 @@ async fn handle_instance_connection(
     connection: inst::ServerConnection,
     instances: Arc<Mutex<Instances>>,
 ) {
+    let (command_tx, command_rx) = mpsc::unbounded_channel();
     let mut conn = InstanceConnection {
         connection,
         registry: instances,
+        command_tx,
+        command_rx,
         pid: None,
     };
     conn.run().await
@@ -73,26 +78,47 @@ async fn handle_instance_connection(
 struct InstanceConnection {
     connection: inst::ServerConnection,
     registry: Arc<Mutex<Instances>>,
+    command_tx: mpsc::UnboundedSender<bool>,
+    command_rx: mpsc::UnboundedReceiver<bool>,
     pid: Option<u32>,
 }
 
 impl InstanceConnection {
     async fn run(&mut self) {
         loop {
-            match self.connection.next_message().await {
-                Ok(Some(message)) => match message.kind {
-                    inst::ClientMessageKind::Status { pid, active } => {
-                        self.pid = Some(pid);
-                        self.registry
-                            .lock()
-                            .unwrap()
-                            .insert(pid, Instance { pid, active });
+            tokio::select! {
+                result = self.connection.next_message() => {
+                    match result {
+                        Ok(Some(message)) => match message.kind {
+                            inst::ClientMessageKind::Status { pid, active } => {
+                                self.pid = Some(pid);
+                                self.registry
+                                    .lock()
+                                    .unwrap()
+                                    .insert(pid, Instance {
+                                        pid,
+                                        active,
+                                        command_tx: self.command_tx.clone(),
+                                    });
+                            }
+                        },
+                        Ok(None) => return,
+                        Err(error) => {
+                            eprintln!("could not read client message: {error}");
+                            return;
+                        }
                     }
-                },
-                Ok(None) => return,
-                Err(error) => {
-                    eprintln!("could not read client message: {error}");
-                    return;
+                }
+                command = self.command_rx.recv() => {
+                    match command {
+                        Some(active) => {
+                            if let Err(error) = self.connection.send(&inst::ServerMessage::active(active)).await {
+                                eprintln!("could not send command to instance: {error}");
+                                return;
+                            }
+                        }
+                        None => return,
+                    }
                 }
             }
         }
@@ -128,9 +154,21 @@ async fn handle_ctrl_connection(
                         eprintln!("error sending ctrl message: {e}")
                     }
                 }
-                // TODO: continue here, refactor so that we have access to the instance connection, maybe by storing
-                // the connection in the Instance struct?
-                ctrl::ClientMessageKind::SetActive { pid, val } => todo!(),
+                ctrl::ClientMessageKind::SetActive { pid, val } => {
+                    let command_tx = instances
+                        .lock()
+                        .unwrap()
+                        .get(&pid)
+                        .map(|instance| instance.command_tx.clone());
+                    match command_tx {
+                        Some(command_tx) => {
+                            if command_tx.send(val).is_err() {
+                                eprintln!("instance {pid} is no longer connected");
+                            }
+                        }
+                        None => eprintln!("no instance found with pid {pid}"),
+                    }
+                }
             },
             Ok(None) => {
                 println!("ctrl connection closed");

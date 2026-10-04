@@ -21,7 +21,7 @@ impl ServerMessage {
 
     pub fn active(val: bool) -> Self {
         Self {
-            kind: ServerMessageKind::SetActive(val),
+            kind: ServerMessageKind::SetActive { val },
         }
     }
 }
@@ -30,7 +30,7 @@ impl ServerMessage {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ServerMessageKind {
     GetStatus,
-    SetActive(bool),
+    SetActive { val: bool },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
